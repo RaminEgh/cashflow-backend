@@ -8,7 +8,6 @@ use App\Http\Requests\Admin\Deposit\StoreDepositRequest;
 use App\Http\Requests\Admin\Organ\UpdateOrganRequest;
 use App\Http\Resources\V1\Admin\Deposit\DepositCollection;
 use App\Http\Resources\V1\Admin\Deposit\DepositResource;
-use App\Http\Resources\V1\Admin\Organ\OrganResource;
 use App\Http\Resources\V1\Common\PaginationCollection;
 use App\Models\Deposit;
 use Illuminate\Http\JsonResponse;
@@ -33,7 +32,7 @@ class DepositController extends Controller
 
     public function show(Deposit $deposit): JsonResponse
     {
-        return Helper::successResponse(null, new OrganResource($deposit));
+        return Helper::successResponse(null, new DepositResource($deposit));
     }
 
     public function update(UpdateOrganRequest $request, Deposit $deposit): JsonResponse

@@ -13,7 +13,8 @@ use App\Models\Allocation;
 use App\Models\Organ;
 use App\Models\Role;
 use App\Models\User;
-use App\Services\Rahkaran\IncomeOutgoingService;
+use App\Services\Rahkaran\IncomeOutgoingService as RahkaranIncomeOutgoingService;
+use App\Services\Banking\IncomeOutgoingService as BankingIncomeOutgoingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,7 +24,7 @@ class OrganController extends Controller
 {
 
     public function __construct(
-        private IncomeOutgoingService $incomeOutgoingService
+        private readonly RahkaranIncomeOutgoingService $rahkaranIncomeOutgoingService, private readonly BankingIncomeOutgoingService $bankingIncomeOutgoingService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -128,19 +129,19 @@ class OrganController extends Controller
 
         $result = [];
         foreach ($months as $num => $name) {
-          $incomeOutgoing = $this->incomeOutgoingService->calculateOrganMonthlyIncomeOutgoing($organ, "1404/$num");
+          $rahkaranIncomeOutgoing = $this->rahkaranIncomeOutgoingService->calculateOrganMonthlyIncomeOutgoing($organ, "1404/$num");
+          $bankIncomeOutgoing = $this->bankingIncomeOutgoingService->calculateOrganMonthlyIncomeOutgoing($organ, "1404/$num");
             $result[] = [
                 'id' => $num + 1,
                 'month' => $name,
                 'budget' => $allocation["month_{$num}_budget"],
                 'expense' => $allocation["month_{$num}_expense"],
-                'bank_income' => 3_000_000_000,
-                'bank_outgoing' => 3_000_000_000,
-                'rahkaran_income' => $num === 4 || $num === 5 ? $incomeOutgoing['total_income'] : 0,
-                'rahkaran_outgoing' => $num === 4 || $num === 5 ? $incomeOutgoing['total_outgoing'] : 0,
+                'bank_income' => $bankIncomeOutgoing['total_income'] ?? 0,
+                'bank_outgoing' => $bankIncomeOutgoing['total_outgoing'] ?? 0,
+                'rahkaran_income' => $rahkaranIncomeOutgoing['total_income'] ?? 0,
+                'rahkaran_outgoing' => $rahkaranIncomeOutgoing['total_outgoing'] ?? 0,
             ];
         }
-
 
         return Helper::successResponse(null, [
             'list' => $result,

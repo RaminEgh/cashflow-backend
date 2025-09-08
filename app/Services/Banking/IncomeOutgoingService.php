@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Rahkaran;
+namespace App\Services\Banking;
 
 use App\Models\Balance;
 use App\Models\Organ;
@@ -67,26 +67,12 @@ class IncomeOutgoingService
         }
 
         // Use the first and last records within the month as start and end
-        $startBalance = $monthlyBalances->first()->rahkaran_balance;
-        $endBalance = $monthlyBalances->last()->rahkaran_balance;
+        $startBalance = $monthlyBalances->first()->balance;
+        $endBalance = $monthlyBalances->last()->balance;
 
         // Calculate income and outgoing based only on records inside the month
         $income = $this->calculateIncome($startBalance, $endBalance, $monthlyBalances);
         $outgoing = $this->calculateOutgoing($startBalance, $endBalance, $monthlyBalances);
-
-        Log::info('getMonthlyBalances inputs', [
-            'deposit_id' => $depositId,
-            'startDate' => $startGregorian->toDateTimeString(),
-            'endDate'   => $endGregorian->toDateTimeString(),
-            'year_month' => $yearMonth,
-            'start_balance' => $startBalance,
-            'end_balance' => $endBalance,
-            'income' => $income,
-            'outgoing' => $outgoing,
-            'net_change' => $endBalance - $startBalance,
-            'balance_records_count' => $monthlyBalances->count(),
-        ]);
-
 
         return [
             'deposit_id' => $depositId,
@@ -250,13 +236,13 @@ class IncomeOutgoingService
     private function getBalanceAtDate(int $depositId, Carbon $date): ?int
     {
         $balance = Balance::where('deposit_id', $depositId)
-            ->where('rahkaran_status', 'success')
-            ->where('rahkaran_balance', '!=', null)
-            ->where('rahkaran_fetched_at', '<=', $date)
-            ->orderBy('rahkaran_fetched_at', 'desc')
+            ->where('status', 'success')
+            ->where('balance', '!=', null)
+            ->where('fetched_at', '<=', $date)
+            ->orderBy('fetched_at', 'desc')
             ->first();
 
-        return $balance ? $balance->rahkaran_balance : null;
+        return $balance ? $balance->balance : null;
     }
 
     /**
@@ -270,10 +256,10 @@ class IncomeOutgoingService
     private function getMonthlyBalances(int $depositId, Carbon $startDate, Carbon $endDate): Collection
     {
         return Balance::where('deposit_id', $depositId)
-            ->where('rahkaran_status', 'success')
-            ->where('rahkaran_balance', '!=', null)
-            ->whereBetween('rahkaran_fetched_at', [$startDate, $endDate])
-            ->orderBy('rahkaran_fetched_at', 'asc')
+            ->where('status', 'success')
+            ->where('balance', '!=', null)
+            ->whereBetween('fetched_at', [$startDate, $endDate])
+            ->orderBy('fetched_at', 'asc')
             ->get();
     }
 
@@ -296,10 +282,10 @@ class IncomeOutgoingService
         $previousBalance = $startBalance;
 
         foreach ($monthlyBalances as $balance) {
-            if ($balance->rahkaran_balance > $previousBalance) {
-                $income += $balance->rahkaran_balance - $previousBalance;
+            if ($balance->balance > $previousBalance) {
+                $income += $balance->balance - $previousBalance;
             }
-            $previousBalance = $balance->rahkaran_balance;
+            $previousBalance = $balance->balance;
         }
 
         return $income;
@@ -324,10 +310,10 @@ class IncomeOutgoingService
         $previousBalance = $startBalance;
 
         foreach ($monthlyBalances as $balance) {
-            if ($balance->rahkaran_balance < $previousBalance) {
-                $expenses += $previousBalance - $balance->rahkaran_balance;
+            if ($balance->balance < $previousBalance) {
+                $expenses += $previousBalance - $balance->balance;
             }
-            $previousBalance = $balance->rahkaran_balance;
+            $previousBalance = $balance->balance;
         }
 
         return $expenses;
@@ -373,16 +359,16 @@ class IncomeOutgoingService
 
         foreach ($balances as $balance) {
             if ($previousBalance !== null) {
-                $change = $balance->rahkaran_balance - $previousBalance;
+                $change = $balance->balance - $previousBalance;
                 $changes->push([
-                    'date' => $balance->rahkaran_fetched_at,
-                    'balance' => $balance->rahkaran_balance,
+                    'date' => $balance->fetched_at,
+                    'balance' => $balance->balance,
                     'change' => $change,
                     'type' => $change > 0 ? 'income' : ($change < 0 ? 'expense' : 'no_change'),
                     'amount' => abs($change),
                 ]);
             }
-            $previousBalance = $balance->rahkaran_balance;
+            $previousBalance = $balance->balance;
         }
 
         return [

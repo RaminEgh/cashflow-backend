@@ -53,4 +53,16 @@ class Helper
 
         return strtr($string, $map);
     }
+
+    /**
+     * Get a setting value
+     *
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
+     */
+    public static function setting(string $key, $default = null)
+    {
+        return app('settings')->get($key, $default);
+    }
 }

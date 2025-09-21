@@ -2,6 +2,7 @@
 
 use App\Helpers\Helper;
 use App\Http\Controllers\Api\V1\UploadController;
+use App\Http\Controllers\Api\V1\Admin\SettingController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__ . '/auth.php';
@@ -46,6 +47,20 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::post('/', [UploadController::class, 'store']);
         Route::get('/{upload}/download', [UploadController::class, 'download']);
         Route::delete('/{upload}', [UploadController::class, 'destroy']);
+    });
+
+    // Settings routes
+    Route::group(['prefix' => 'settings'], function () {
+        Route::get('/', [SettingController::class, 'all']);
+        Route::get('/get', [SettingController::class, 'get']);
+        Route::post('/set', [SettingController::class, 'set']);
+        Route::post('/get-multiple', [SettingController::class, 'getMultiple']);
+        Route::post('/set-multiple', [SettingController::class, 'setMultiple']);
+        Route::get('/has', [SettingController::class, 'has']);
+        Route::delete('/delete', [SettingController::class, 'delete']);
+        Route::get('/by-prefix', [SettingController::class, 'getByPrefix']);
+        Route::delete('/by-prefix', [SettingController::class, 'deleteByPrefix']);
+        Route::post('/clear-cache', [SettingController::class, 'clearCache']);
     });
 
 });

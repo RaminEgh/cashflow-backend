@@ -23,13 +23,6 @@ class AdminPermissionKey
     const USER_BLOCK = 'admin-user-block';
     const USER_UNBLOCK = 'admin-user-unblock';
 
-    const ALLOCATION = 'admin-allocation';
-    const ALLOCATION_LIST = 'admin-allocation-list';
-    const ALLOCATION_CREATE = 'admin-allocation-create';
-    const ALLOCATION_EDIT = 'admin-allocation-edit';
-    const ALLOCATION_DELETE = 'admin-allocation-delete';
-    const ALLOCATION_SHOW = 'admin-allocation-show';
-
     const BANK = 'admin-bank';
     const BANK_LIST = 'admin-bank-list';
     const BANK_CREATE = 'admin-bank-create';
@@ -45,6 +38,13 @@ class AdminPermissionKey
     const ORGAN_DELETE = 'admin-organ-delete';
 
     const ORGAN_ASSIGN_ADMIN = 'admin-organ-assign-admin';
+
+    const ALLOCATION = 'admin-allocation';
+    const ALLOCATION_LIST = 'admin-allocation-list';
+    const ALLOCATION_CREATE = 'admin-allocation-create';
+    const ALLOCATION_SHOW = 'admin-allocation-show';
+    const ALLOCATION_EDIT = 'admin-allocation-edit';
+    const ALLOCATION_DELETE = 'admin-allocation-delete';
 
     const DEPOSIT = 'admin-deposit';
     const DEPOSIT_LIST = 'admin-deposit-list';

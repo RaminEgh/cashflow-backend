@@ -1,0 +1,7 @@
+# Database Protection Rule
+
+---
+alwaysApply: true
+---
+
+Do not delete, drop, delete, or reset my database.

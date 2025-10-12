@@ -1,7 +1,7 @@
 {
     "mcpServers": {
         "laravel-boost": {
-            "command": "C:\\Users\\HP\\.config\\herd\\bin\\php84\\php.exe",
+            "command": "C:\\laragon\\bin\\php\\php-8.3.16-Win32-vs16-x64\\php.exe",
             "args": [
                 "C:\\laragon\\www\\cashflow-backend\\artisan",
                 "boost:mcp"

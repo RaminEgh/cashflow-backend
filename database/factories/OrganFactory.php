@@ -16,8 +16,16 @@ class OrganFactory extends Factory
      */
     public function definition(): array
     {
+        $name = fake()->company();
         return [
-            //
+            'name' => $name,
+            'en_name' => fake()->company(),
+            'phone' => fake()->phoneNumber(),
+            'description' => fake()->sentence(),
+            'logo' => null,
+            'background' => null,
+            'created_by' => 1,
+            'updated_by' => 1,
         ];
     }
 }

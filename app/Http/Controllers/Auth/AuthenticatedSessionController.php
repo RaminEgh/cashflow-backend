@@ -19,11 +19,17 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request)
     {
-
         try {
-            $user = User::where('email', $request->email)->first();
+            // Validate the request first
+            $validated = $request->validated();
 
-            if (!Hash::check($request->password, $user->password) || ($user->status !== User::STATUS_INACTIVE && $user->status !== User::STATUS_ACTIVE)) {
+            $user = User::where('email', $validated['email'])->first();
+
+            if (!$user) {
+                return Helper::errorResponse(__('auth.failed'), null, 403);
+            }
+
+            if (!Hash::check($validated['password'], $user->password) || ($user->status !== User::STATUS_INACTIVE && $user->status !== User::STATUS_ACTIVE)) {
                 return Helper::errorResponse(__('auth.failed'), null, 403);
             }
 
@@ -42,6 +48,7 @@ class AuthenticatedSessionController extends Controller
                 'user_agent' => $request->userAgent(),
                 'description' => 'ورود',
                 'type' => 1,
+                'last_activity' => now(),
             ]);
 
             $token = $user->createToken('auth-token')->plainTextToken;
@@ -77,6 +84,7 @@ class AuthenticatedSessionController extends Controller
                 'user_agent' => $request->userAgent(),
                 'description' => 'خروج',
                 'type' => 2,
+                'last_activity' => now(),
             ]);
 
             return response()->json([

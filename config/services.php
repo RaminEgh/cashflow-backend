@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'timeline' => [
+        'base_url' => env('TIMELINE_API_BASE_URL', 'http://5.160.184.51:5200'),
+    ],
+
 ];

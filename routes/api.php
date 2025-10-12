@@ -3,6 +3,7 @@
 use App\Helpers\Helper;
 use App\Http\Controllers\Api\V1\UploadController;
 use App\Http\Controllers\Api\V1\Admin\SettingController;
+use App\Http\Controllers\Api\V1\Admin\TimelineController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__ . '/auth.php';
@@ -63,5 +64,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::post('/clear-cache', [SettingController::class, 'clearCache']);
     });
 
+    // Timeline routes
+    Route::group(['prefix' => 'timeline'], function () {
+        Route::get('/grouped/{organ}', [TimelineController::class, 'grouped']);
+        Route::get('/{organ}', [TimelineController::class, 'show']);
+        Route::get('/{organ}/summary', [TimelineController::class, 'summary']);
+        Route::post('/{organ}/refresh', [TimelineController::class, 'refresh']);
+    });
 });
-

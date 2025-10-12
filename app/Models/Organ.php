@@ -30,6 +30,11 @@ class Organ extends Model
         return $this->hasMany(Allocation::class);
     }
 
+    public function timelineEntries(): HasMany
+    {
+        return $this->hasMany(TimelineEntry::class);
+    }
+
     public function getSlugOptions(): SlugOptions
     {
         return SlugOptions::create()

@@ -51,9 +51,6 @@ class TimelineFetchService
             return;
         }
 
-        // Clear existing timeline entries for this organ
-        TimelineEntry::where('organ_id', $organ->id)->delete();
-
         // Store new timeline entries
         foreach ($timelineData as $item) {
             $this->storeTimelineEntry($organ, $item);

@@ -29,7 +29,7 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'Nardoon Backend API Documentation',
+        'description' => 'Cashflow Backend API Documentation for organizations: incomes, outgoings, budgets, and plans.',
     ],
 
     /*
@@ -39,7 +39,7 @@ return [
         /*
          * Define the title of the documentation's website. App name is used when this config is `null`.
          */
-        'title' => null,
+        'title' => 'Cashflow API Docs',
 
         /*
          * Define the theme of the documentation. Available options are `light`, `dark`, and `system`.

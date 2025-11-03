@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Route;
 
 require __DIR__ . '/auth.php';
 
+
+
 Route::get('/test', function () {
     return Helper::successResponse('', ['this is ' => 'test']);
 });

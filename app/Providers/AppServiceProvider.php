@@ -16,7 +16,7 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Register any application services.
      */
-    public function register(): void                    
+    public function register(): void
     {
         //
     }
@@ -26,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Allow access to API documentation in local environment or for authenticated users
+        Gate::define('viewApiDocs', function ($user = null) {
+            return app()->environment('local') || ($user !== null);
+        });
         try {
             if (Schema::hasTable('cache')) {
                 $allPermissions = Cache::remember(CacheKey::PERMISSIONS, CacheKey::TIME_TEN_MINUTES, function () {
@@ -36,7 +40,6 @@ class AppServiceProvider extends ServiceProvider
                     Gate::define($permission->slug, function ($user) use ($permission) {
                         $roles = Cache::remember(CacheKey::ROLES_PERMISSION . $permission->slug . '_' . auth()->id(), CacheKey::TIME_FIVE_MINUTES, function () use ($permission) {
                             return $permission->roles;
-
                         });
 
                         return $user->hasRole($roles);
@@ -47,7 +50,6 @@ class AppServiceProvider extends ServiceProvider
             // Log the error but don't fail the application boot
             \Log::warning('Database not ready during boot: ' . $e->getMessage());
         } catch (\Exception $e) {
-            // Log any other errors but don't fail the application boot
             \Log::warning('Error during AppServiceProvider boot: ' . $e->getMessage());
         }
     }

@@ -54,36 +54,82 @@ class ParsianBankAdapter implements BankAdapterInterface
             throw new \Exception('Parsian Bank client credentials not configured');
         }
 
-        $authUrl = $this->shouldUseSandbox()
-            ? 'https://sandbox.parsian-bank.ir/token'
-            : 'https://openapi.parsian-bank.ir/token';
+        // Try sandbox first, then fallback to production
+        $urls = [
+            'sandbox' => 'https://sandbox.parsian-bank.ir/oauth2/token',
+            'production' => 'https://openapi.parsian-bank.ir/oauth2/token',
+        ];
 
-        $response = Http::asForm()->post($authUrl, [
-            'grant_type' => 'client_credentials',
-            'client_id' => $clientId,
-            'client_secret' => $clientSecret,
-        ]);
+        $authUrl = $this->shouldUseSandbox() ? $urls['sandbox'] : $urls['production'];
+        $lastException = null;
 
-        if (! $response->successful()) {
-            Log::error('Failed to authenticate with Parsian Bank', [
+        // Try primary URL first
+        try {
+            $response = Http::timeout(10)
+                ->withBasicAuth($clientId, $clientSecret)
+                ->asForm()
+                ->post($authUrl, [
+                    'grant_type' => 'client_credentials',
+                    'client_id' => $clientId,
+                    'client_secret' => $clientSecret,
+                ]);
+
+            if ($response->successful() && isset($response->json()['access_token'])) {
+                return $response->json()['access_token'];
+            }
+
+            Log::warning('Parsian Bank authentication failed with primary URL', [
+                'url' => $authUrl,
+                'status' => $response->status(),
+                'response' => $response->body(),
+            ]);
+        } catch (\Exception $e) {
+            $lastException = $e;
+            Log::warning('Parsian Bank primary URL failed', [
+                'url' => $authUrl,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        // Try fallback URL if primary failed
+        $fallbackUrl = $this->shouldUseSandbox() ? $urls['production'] : $urls['sandbox'];
+
+        try {
+            $response = Http::timeout(10)
+                ->withBasicAuth($clientId, $clientSecret)
+                ->asForm()
+                ->post($fallbackUrl, [
+                    'grant_type' => 'client_credentials',
+                    'client_id' => $clientId,
+                    'client_secret' => $clientSecret,
+                ]);
+
+            if ($response->successful() && isset($response->json()['access_token'])) {
+                Log::info('Parsian Bank authentication succeeded with fallback URL', [
+                    'fallback_url' => $fallbackUrl,
+                ]);
+
+                return $response->json()['access_token'];
+            }
+
+            Log::error('Failed to authenticate with Parsian Bank (both URLs)', [
+                'primary_url' => $authUrl,
+                'fallback_url' => $fallbackUrl,
                 'status' => $response->status(),
                 'response' => $response->body(),
             ]);
 
             throw new \Exception('Failed to authenticate with Parsian Bank');
-        }
-
-        $data = $response->json();
-
-        if (! isset($data['access_token'])) {
-            Log::error('Parsian Bank did not return access token', [
-                'data' => $data,
+        } catch (\Exception $e) {
+            Log::error('Failed to authenticate with Parsian Bank', [
+                'primary_url' => $authUrl,
+                'fallback_url' => $fallbackUrl,
+                'primary_error' => $lastException?->getMessage(),
+                'fallback_error' => $e->getMessage(),
             ]);
 
-            throw new \Exception('Invalid authentication response from Parsian Bank');
+            throw new \Exception('Failed to authenticate with Parsian Bank: ' . $e->getMessage());
         }
-
-        return $data['access_token'];
     }
 
     protected function shouldUseSandbox(): bool

@@ -8,11 +8,14 @@ use Illuminate\Support\Facades\Http;
 class MellatBankAdapter implements BankAdapterInterface
 {
     protected array $credentials;
+
     protected string $apiEndpoint;
+
     public function setAccount(array $credentials): BankAdapterInterface
     {
         $this->credentials = $credentials;
         $this->apiEndpoint = config('banks.mellat.api_url');
+
         return $this;
     }
 
@@ -24,5 +27,18 @@ class MellatBankAdapter implements BankAdapterInterface
 
         return (float) $response->json('data.current_balance');
     }
-}
 
+    public function getAccountBalance(): array
+    {
+        $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? '';
+        $balance = $this->getBalance();
+
+        return [
+            'accountNumber' => $accountNumber,
+            'balance' => $balance,
+            'todayDepositAmount' => 0.0,
+            'todayWithdrawAmount' => 0.0,
+            'currency' => 'IRR',
+        ];
+    }
+}

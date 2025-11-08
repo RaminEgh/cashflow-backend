@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Http\Resources\V1\Common;
+namespace App\Http\Resources\V1\Admin\Organ;
 
 use App\Http\Resources\V1\Admin\Deposit\DepositCollection;
+use App\Http\Resources\V1\Admin\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class BankResource extends JsonResource
+class OrganWithDepositsAndAdminsResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -20,8 +21,12 @@ class BankResource extends JsonResource
             'name' => $this->name,
             'en_name' => $this->en_name,
             'slug' => $this->slug,
-            'logo' => $this->logo,
+            'phone' => $this->phone,
+            'description' => $this->description,
+            'admins_id' => UserResource::collection($this->admins),
             'deposits' => new DepositCollection($this->deposits),
+            'logo' => url('/storage/' . $this->logo),
+            'background' => $this->background,
         ];
     }
 }

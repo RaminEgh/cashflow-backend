@@ -6,7 +6,8 @@ use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Allocation\StoreAllocationRequest;
 use App\Http\Requests\Admin\Allocation\UpdateAllocationRequest;
-use App\Http\Resources\V1\Admin\Organ\AllocationResource;
+use App\Http\Resources\V1\Admin\Allocation\AllocationListCollection;
+use App\Http\Resources\V1\Admin\Allocation\AllocationResource;
 use App\Models\Allocation;
 use App\Models\Organ;
 use App\Services\Banking\IncomeOutgoingService as BankingIncomeOutgoingService;
@@ -21,66 +22,11 @@ class AllocationController extends Controller
         private readonly BankingIncomeOutgoingService $bankingIncomeOutgoingService,
     ) {}
 
-    public function index(Request $request, Organ $organ): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $year = $request->year;
+        $allocation = Allocation::all();
 
-        if (! $year) {
-            $latestAllocation = $organ->allocations()
-                ->orderBy('year', 'desc')
-                ->first();
-
-            if (! $latestAllocation) {
-                return Helper::successResponse('No data found', [
-                    'list' => [],
-                ]);
-            }
-
-            $year = $latestAllocation->year;
-        }
-
-        $allocation = $organ->allocations()
-            ->where('year', $year)
-            ->first();
-
-        if (! $allocation) {
-            return Helper::successResponse('No data found', [
-                'list' => [],
-            ]);
-        }
-
-        $months = [
-            1 => 'فروردین',
-            2 => 'اردیبهشت',
-            3 => 'خرداد',
-            4 => 'تیر',
-            5 => 'مرداد',
-            6 => 'شهریور',
-            7 => 'مهر',
-            8 => 'آبان',
-            9 => 'آذر',
-            10 => 'دی',
-            11 => 'بهمن',
-            12 => 'اسفند',
-        ];
-
-        $result = [];
-        foreach ($months as $num => $name) {
-            $rahkaranIncomeOutgoing = $this->rahkaranIncomeOutgoingService->calculateOrganMonthlyIncomeOutgoing($organ, "{$year}/{$num}");
-            $bankIncomeOutgoing = $this->bankingIncomeOutgoingService->calculateOrganMonthlyIncomeOutgoing($organ, "{$year}/{$num}");
-            $result[] = [
-                'id' => $num + 1,
-                'month' => $name,
-                'budget' => $allocation["month_{$num}_budget"],
-                'expense' => $allocation["month_{$num}_expense"],
-                'bank_income' => $bankIncomeOutgoing['total_income'] ?? 0,
-                'bank_outgoing' => $bankIncomeOutgoing['total_outgoing'] ?? 0,
-                'rahkaran_income' => $rahkaranIncomeOutgoing['total_income'] ?? 0,
-                'rahkaran_outgoing' => $rahkaranIncomeOutgoing['total_outgoing'] ?? 0,
-            ];
-        }
-
-        return Helper::successResponse(null, $result);
+        return Helper::successResponse(null, new AllocationListCollection($allocation));
     }
 
     public function store(StoreAllocationRequest $request): JsonResponse

@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\Organ\StoreOrganRequest;
 use App\Http\Requests\Admin\Organ\UpdateOrganRequest;
 use App\Http\Resources\V1\Admin\Organ\OrganCollection;
 use App\Http\Resources\V1\Admin\Organ\OrganResource;
+use App\Http\Resources\V1\Admin\Organ\OrganWithDepositsAndAdminsResource;
 use App\Http\Resources\V1\Common\PaginationCollection;
 use App\Models\Organ;
 use App\Models\Role;
@@ -70,7 +71,7 @@ class OrganController extends Controller
 
     public function show(Organ $organ): JsonResponse
     {
-        return Helper::successResponse(null, new OrganResource($organ));
+        return Helper::successResponse(null, new OrganWithDepositsAndAdminsResource($organ));
     }
 
     public function allocation(Organ $organ, Request $request): JsonResponse
@@ -109,6 +110,7 @@ class OrganController extends Controller
         }
 
         return Helper::successResponse(null, [
+            'year' => $allocation->year,
             'list' => $result,
         ]);
     }

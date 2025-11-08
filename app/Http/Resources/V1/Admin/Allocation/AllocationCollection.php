@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\V1\Admin\Organ;
+namespace App\Http\Resources\V1\Admin\Allocation;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -17,6 +17,7 @@ class AllocationCollection extends ResourceCollection
         return $this->collection->map(function ($item) {
             return [
                 'id' => $item->id,
+                'organ' => new OrganResource($item->organ),
                 'year' => $item->year,
                 'description' => $item->description,
                 'month_1_budget' => $item->month_1_budget,

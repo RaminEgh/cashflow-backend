@@ -48,8 +48,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['is-admin']], function () {
 
     Route::group(['prefix' => 'organ', 'middleware' => ['can:'.AdminPermissionKey::ORGAN]], function () {
         Route::get('/', [OrganController::class, 'index'])->middleware('can:'.AdminPermissionKey::ORGAN_LIST);
-        Route::get('/{organ}', [OrganController::class, 'show'])->middleware('can:'.AdminPermissionKey::ORGAN_SHOW);
         Route::post('/', [OrganController::class, 'store'])->middleware('can:'.AdminPermissionKey::ORGAN_CREATE);
+        Route::get('/{organ}', [OrganController::class, 'show'])->middleware('can:'.AdminPermissionKey::ORGAN_SHOW);
         Route::put('/{organ}', [OrganController::class, 'update'])->middleware('can:'.AdminPermissionKey::ORGAN_EDIT);
         Route::delete('/{organ}', [OrganController::class, 'delete'])->middleware('can:'.AdminPermissionKey::ORGAN_DELETE);
         Route::patch('/{organ}/assign', [OrganController::class, 'assign'])->middleware('can:'.AdminPermissionKey::ORGAN_ASSIGN_ADMIN);
@@ -57,6 +57,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['is-admin']], function () {
     });
 
     Route::group(['prefix' => 'allocation', 'middleware' => ['can:'.AdminPermissionKey::ALLOCATION]], function () {
+        Route::get('/', [AllocationController::class, 'index'])->middleware('can:'.AdminPermissionKey::ALLOCATION_CREATE);
         Route::get('/organ/{organ}', [AllocationController::class, 'index'])->middleware('can:'.AdminPermissionKey::ALLOCATION_LIST);
         Route::post('/', [AllocationController::class, 'store'])->middleware('can:'.AdminPermissionKey::ALLOCATION_CREATE);
         Route::get('/{allocation}', [AllocationController::class, 'show'])->middleware('can:'.AdminPermissionKey::ALLOCATION_SHOW);

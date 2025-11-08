@@ -2,8 +2,6 @@
 
 namespace App\Http\Resources\V1\Admin\Organ;
 
-use App\Http\Resources\V1\Admin\Deposit\DepositCollection;
-use App\Http\Resources\V1\Admin\User\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -23,8 +21,6 @@ class OrganResource extends JsonResource
             'slug' => $this->slug,
             'phone' => $this->phone,
             'description' => $this->description,
-            'admins_id' => UserResource::collection($this->admins),
-            'deposits' => new DepositCollection($this->deposits),
             'logo' => url('/storage/' . $this->logo),
             'background' => $this->background,
         ];

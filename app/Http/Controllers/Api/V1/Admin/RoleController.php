@@ -12,20 +12,20 @@ use App\Http\Resources\V1\Admin\Role\RoleResource;
 use App\Http\Resources\V1\Common\PaginationCollection;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class RoleController extends Controller
 {
-
     public function index(Request $request): JsonResponse
     {
         $roles = Role::paginate($request->per_page ?? 10);
 
         return Helper::successResponse(null, [
             'list' => new RoleCollection($roles),
-            'pagination' => new PaginationCollection($roles)
+            'pagination' => new PaginationCollection($roles),
         ]);
     }
 
@@ -35,9 +35,10 @@ class RoleController extends Controller
             $role = Role::create([
                 'slug' => $request->slug,
                 'label' => $request->label,
+                'user_type' => User::TYPE_ADMIN,
                 'description' => $request->description,
                 'created_by' => auth()->user()->id,
-                'updated_by' => auth()->user()->id
+                'updated_by' => auth()->user()->id,
             ]);
 
             $role->permissions()->syncWithPivotValues($request->permissions, ['updated_by' => auth()->user()->id]);
@@ -55,14 +56,13 @@ class RoleController extends Controller
         return Helper::successResponse(null, new RoleResource($role));
     }
 
-
     public function update(UpdateRoleRequest $request, Role $role): JsonResponse
     {
         $role->permissions()->syncWithPivotValues($request->permissions, ['updated_at' => now()]);
         $permissions = Permission::WhereIn('id', $request->permissions);
         foreach ($role->users()->get() as $user) {
             foreach ($permissions->get() as $permission) {
-                Cache::forget(CacheKey::ROLES_PERMISSION . $permission->slug . '_' . $user->id);
+                Cache::forget(CacheKey::ROLES_PERMISSION.$permission->slug.'_'.$user->id);
             }
         }
 
@@ -72,6 +72,7 @@ class RoleController extends Controller
     public function destroy(Role $role): JsonResponse
     {
         $role->delete();
+
         return Helper::successResponse('موفقیت آمیز');
     }
 }

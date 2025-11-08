@@ -16,8 +16,14 @@ class BankFactory extends Factory
      */
     public function definition(): array
     {
+        $enName = fake()->company();
+
         return [
-            //
+            'name' => fake()->company(),
+            'en_name' => $enName,
+            'logo' => null,
+            'created_by' => 1,
+            'updated_by' => 1,
         ];
     }
 }

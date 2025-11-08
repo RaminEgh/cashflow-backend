@@ -10,7 +10,7 @@ class Permission extends Model
     /** @use HasFactory<\Database\Factories\PermissionFactory> */
     use HasFactory;
 
-    protected $fillable = ['slug', 'label', 'description'];
+    protected $fillable = ['slug', 'label', 'description', 'parent_id', 'user_type', 'created_by', 'updated_by'];
 
     public function roles()
     {
@@ -21,5 +21,4 @@ class Permission extends Model
     {
         return $this->hasMany(Permission::class, 'parent_id');
     }
-
 }

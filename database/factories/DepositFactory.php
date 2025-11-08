@@ -2,6 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Bank;
+use App\Models\Deposit;
+use App\Models\Organ;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +20,19 @@ class DepositFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'organ_id' => Organ::factory(),
+            'bank_id' => Bank::factory(),
+            'branch_code' => fake()->numberBetween(100, 999),
+            'branch_name' => fake()->company(),
+            'number' => fake()->numerify('##########'),
+            'sheba' => fake()->numerify('IR##########################'),
+            'type' => fake()->randomElement(Deposit::DEPOSIT_TYPES),
+            'currency' => 'IR-Rial',
+            'description' => fake()->sentence(),
+            'balance' => fake()->numberBetween(0, 1000000000),
+            'rahkaran_balance' => fake()->numberBetween(0, 1000000000),
+            'created_by' => 1,
+            'updated_by' => 1,
         ];
     }
 }

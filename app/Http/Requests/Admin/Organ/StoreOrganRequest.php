@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Admin\Organ;
 
 use Illuminate\Foundation\Http\FormRequest;
-use function Psy\debug;
 
 class StoreOrganRequest extends FormRequest
 {
@@ -29,34 +28,8 @@ class StoreOrganRequest extends FormRequest
             'phone' => 'required|string|min:4',
             'admins_id' => 'required|array',
             'admins_id.*' => 'required|integer|exists:users,id',
-            'year' => 'integer|min:1404|max:2050',
-            'allocation_description' => 'string|min:3',
-            'month_1_budget' => 'integer|min:0',
-            'month_2_budget' => 'integer|min:0',
-            'month_3_budget' => 'integer|min:0',
-            'month_4_budget' => 'integer|min:0',
-            'month_5_budget' => 'integer|min:0',
-            'month_6_budget' => 'integer|min:0',
-            'month_7_budget' => 'integer|min:0',
-            'month_8_budget' => 'integer|min:0',
-            'month_9_budget' => 'integer|min:0',
-            'month_10_budget' => 'integer|min:0',
-            'month_11_budget' => 'integer|min:0',
-            'month_12_budget' => 'integer|min:0',
-            'month_1_expense' => 'integer|min:0',
-            'month_2_expense' => 'integer|min:0',
-            'month_3_expense' => 'integer|min:0',
-            'month_4_expense' => 'integer|min:0',
-            'month_5_expense' => 'integer|min:0',
-            'month_6_expense' => 'integer|min:0',
-            'month_7_expense' => 'integer|min:0',
-            'month_8_expense' => 'integer|min:0',
-            'month_9_expense' => 'integer|min:0',
-            'month_10_expense' => 'integer|min:0',
-            'month_11_expense' => 'integer|min:0',
-            'month_12_expense' => 'integer|min:0',
-//            'background' => 'required|string|min:8',
-//            'logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            //            'background' => 'required|string|min:8',
+            //            'logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
     }
 }

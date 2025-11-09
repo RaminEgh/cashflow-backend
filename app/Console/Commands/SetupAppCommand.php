@@ -33,11 +33,14 @@ class SetupAppCommand extends Command
             $this->info('setup started...');
             Storage::disk('public_uploads')->makeDirectory('/');
             Storage::disk('private_uploads')->makeDirectory('/');
-            $this::call('storage:link');
+            $this->call('storage:link');
             $this->info('Storage directories and symlink created!');
             if (!Schema::hasTable('cache')) {
                 $this->call('migrate:fresh');
                 $this->call('db:seed');
+                $this->call('app:fetch-organs');
+                $this->call('app:fetch-deposits');
+                $this->call('app:fetch-rahkaran-balances');
             }
             DB::commit();
             $this->info('setup finished...');

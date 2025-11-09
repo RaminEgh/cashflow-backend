@@ -18,12 +18,12 @@ use App\Services\Rahkaran\IncomeOutgoingService as RahkaranIncomeOutgoingService
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class OrganController extends Controller
 {
     public function __construct(
-        private readonly RahkaranIncomeOutgoingService $rahkaranIncomeOutgoingService, private readonly BankingIncomeOutgoingService $bankingIncomeOutgoingService,
+        private readonly RahkaranIncomeOutgoingService $rahkaranIncomeOutgoingService,
+        private readonly BankingIncomeOutgoingService $bankingIncomeOutgoingService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -40,18 +40,14 @@ class OrganController extends Controller
     {
         DB::beginTransaction();
 
+        $organ = Organ::create([
+            ...$request->validated(),
+            'created_by' => auth()->id(),
+            'updated_by' => auth()->id(),
+        ]);
+
         if ($request->admins_id) {
-            $organ = Organ::create([
-                'name' => $request->name,
-                'en_name' => $request->en_name,
-                'slug' => Str::slug($request->en_name),
-                'phone' => $request->phone,
-                'description' => $request->description,
-                'logo' => $request->logo ?? '',
-                'background' => $request->background ?? '',
-                'created_by' => auth()->id(),
-                'updated_by' => auth()->id(),
-            ]);
+
             $adminsId = $request->admins_id;
             $organ->admins()->syncWithPivotValues($adminsId, ['created_by' => auth()->id(), 'updated_by' => auth()->id()]);
 
@@ -61,12 +57,9 @@ class OrganController extends Controller
             foreach ($users as $user) {
                 $user->roles()->attach($role->id, ['assigned_by' => auth()->id()]);
             }
-
-            return Helper::successResponse(__('crud.d_created', ['source' => __('sources.organ'), 'name' => $organ->name]), new OrganResource($organ));
         }
         DB::commit();
-
-        return Helper::successResponse('خطا');
+        return Helper::successResponse(__('crud.d_created', ['source' => __('sources.organ'), 'name' => $organ->name]), new OrganResource($organ));
     }
 
     public function show(Organ $organ): JsonResponse
@@ -77,7 +70,7 @@ class OrganController extends Controller
     public function allocation(Organ $organ, Request $request): JsonResponse
     {
         $allocation = $organ->allocations()
-            ->when($request->year, fn ($query, $year) => $query->where('year', $year))
+            ->when($request->year, fn($query, $year) => $query->where('year', $year))
             ->first();
 
         if (! $allocation) {
@@ -88,9 +81,18 @@ class OrganController extends Controller
         }
 
         $months = [
-            1 => 'فروردین', 2 => 'اردیبهشت', 3 => 'خرداد', 4 => 'تیر',
-            5 => 'مرداد', 6 => 'شهریور', 7 => 'مهر', 8 => 'آبان',
-            9 => 'آذر', 10 => 'دی', 11 => 'بهمن', 12 => 'اسفند',
+            1 => 'فروردین',
+            2 => 'اردیبهشت',
+            3 => 'خرداد',
+            4 => 'تیر',
+            5 => 'مرداد',
+            6 => 'شهریور',
+            7 => 'مهر',
+            8 => 'آبان',
+            9 => 'آذر',
+            10 => 'دی',
+            11 => 'بهمن',
+            12 => 'اسفند',
         ];
 
         $result = [];
@@ -117,29 +119,32 @@ class OrganController extends Controller
 
     public function update(UpdateOrganRequest $request, Organ $organ): JsonResponse
     {
-        if ($request->admins_id) {
-            $organ->update([
-                'name' => $request->name,
-                'phone' => $request->phone,
-                'description' => $request->description,
-                'logo' => $request->logo ?? '',
-                'background' => $request->background ?? '',
-                'created_by' => auth()->id(),
-                'updated_by' => auth()->id(),
-            ]);
+        DB::beginTransaction();
+        $organ->update([
+            ...$request->validated(),
+            'updated_by' => auth()->id(),
+        ]);
 
+        if ($request->has('admins_id')) {
+            $adminsId = $request->admins_id;
+
+            if (empty($adminsId)) {
+                // Detach all admins if empty array or null
+                $organ->admins()->detach();
+            } else {
+                // Sync with provided admin IDs
+                $organ->admins()->syncWithPivotValues($adminsId, ['created_by' => auth()->id(), 'updated_by' => auth()->id()]);
+
+                $role = Role::whereSlug('super-organ-admin')->first();
+
+                $users = User::whereIn('id', $adminsId)->get();
+                foreach ($users as $user) {
+                    $user->roles()->attach($role->id, ['assigned_by' => auth()->id()]);
+                }
+            }
         }
-        $adminsId = $request->admins_id;
-        $organ->admins()->syncWithPivotValues($adminsId, ['created_by' => auth()->id(), 'updated_by' => auth()->id()]);
-
-        $role = Role::whereSlug('super-organ-admin')->first();
-
-        $users = User::whereIn('id', $adminsId)->get();
-        foreach ($users as $user) {
-            $user->roles()->attach($role->id, ['assigned_by' => auth()->id()]);
-        }
-
-        return Helper::successResponse('سازمان با موفقیت ویرایش شد.');
+        DB::commit();
+        return Helper::successResponse(__('crud.d_updated', ['source' => __('sources.organ'), 'name' => $organ->name]), new OrganResource($organ));
     }
 
     public function delete(Organ $organ): JsonResponse

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('original_name');
             $table->string('stored_name');
             $table->string('mime_type');
+            $table->string('disk')->default('public_uploads');
             $table->enum('is_private', [Upload::PRIVATE_UPLOAD, Upload::PUBLIC_UPLOAD])->default(0);
             $table->unsignedBigInteger('size');
             $table->string('path');

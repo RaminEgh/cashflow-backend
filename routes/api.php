@@ -4,7 +4,7 @@ use App\Helpers\Helper;
 use App\Http\Controllers\Api\V1\Admin\SettingController;
 use App\Http\Controllers\Api\V1\Admin\TimelineController;
 use App\Http\Controllers\Api\V1\ParsianTestController;
-use App\Http\Controllers\Api\V1\UploadController;
+use App\Http\Controllers\Api\V1\Common\UploadController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__ . '/auth.php';
@@ -106,6 +106,12 @@ Route::group(['prefix' => 'parsian'], function () {
     Route::post('/balance/simple', [ParsianTestController::class, 'getSimpleBalance']);
 });
 
+// Download and display routes are public (authorization handled in controller)
+Route::group(['prefix' => 'upload'], function () {
+    Route::get('/{upload:slug}/download', [UploadController::class, 'download'])->name('upload.download');
+    Route::get('/{upload:slug}/display', [UploadController::class, 'display'])->name('upload.display');
+});
+
 Route::group(['middleware' => ['auth:sanctum']], function () {
 
     Route::get('/user', function () {
@@ -117,10 +123,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     Route::group(['prefix' => 'upload'], function () {
         Route::get('/', [UploadController::class, 'index']);
-        Route::get('/{upload}', [UploadController::class, 'show']);
         Route::post('/', [UploadController::class, 'store']);
-        Route::get('/{upload}/download', [UploadController::class, 'download']);
-        Route::delete('/{upload}', [UploadController::class, 'destroy']);
+        Route::get('/{upload}', [UploadController::class, 'show']);
     });
 
     // Settings routes

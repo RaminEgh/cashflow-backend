@@ -7,8 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Deposit;
 use App\Models\Organ;
 use App\Services\Rahkaran\IncomeOutgoingService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class MonthlyIncomeExpenseController extends Controller
 {
@@ -18,10 +18,6 @@ class MonthlyIncomeExpenseController extends Controller
 
     /**
      * Get monthly income and expenses for a specific deposit
-     *
-     * @param Request $request
-     * @param int $depositId
-     * @return JsonResponse
      */
     public function getMonthlyIncomeExpense(Request $request, int $depositId): JsonResponse
     {
@@ -33,7 +29,7 @@ class MonthlyIncomeExpenseController extends Controller
 
         // Check if deposit exists
         $deposit = Deposit::find($depositId);
-        if (!$deposit) {
+        if (! $deposit) {
             return Helper::errorResponse('Deposit not found', 404);
         }
 
@@ -45,10 +41,6 @@ class MonthlyIncomeExpenseController extends Controller
 
     /**
      * Get monthly income and expenses for all deposits of an organ
-     *
-     * @param Request $request
-     * @param int $organId
-     * @return JsonResponse
      */
     public function getOrganMonthlyIncomeExpense(Request $request, int $organId): JsonResponse
     {
@@ -60,7 +52,7 @@ class MonthlyIncomeExpenseController extends Controller
 
         // Check if organ exists
         $organ = Organ::find($organId);
-        if (!$organ) {
+        if (! $organ) {
             return Helper::errorResponse('Organ not found', 404);
         }
 
@@ -71,9 +63,6 @@ class MonthlyIncomeExpenseController extends Controller
 
     /**
      * Get monthly income and expenses for all deposits
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function getAllDepositsMonthlyIncomeExpense(Request $request): JsonResponse
     {
@@ -89,9 +78,6 @@ class MonthlyIncomeExpenseController extends Controller
 
     /**
      * Get monthly income and expenses for all organs
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function getAllOrgansMonthlyIncomeExpense(Request $request): JsonResponse
     {
@@ -107,10 +93,6 @@ class MonthlyIncomeExpenseController extends Controller
 
     /**
      * Get yearly summary for a specific deposit
-     *
-     * @param Request $request
-     * @param int $depositId
-     * @return JsonResponse
      */
     public function getYearlySummary(Request $request, int $depositId): JsonResponse
     {
@@ -122,7 +104,7 @@ class MonthlyIncomeExpenseController extends Controller
 
         // Check if deposit exists
         $deposit = Deposit::find($depositId);
-        if (!$deposit) {
+        if (! $deposit) {
             return Helper::errorResponse('Deposit not found', 404);
         }
 
@@ -144,10 +126,6 @@ class MonthlyIncomeExpenseController extends Controller
 
     /**
      * Get yearly summary for all deposits of an organ
-     *
-     * @param Request $request
-     * @param int $organId
-     * @return JsonResponse
      */
     public function getOrganYearlySummary(Request $request, int $organId): JsonResponse
     {
@@ -159,7 +137,7 @@ class MonthlyIncomeExpenseController extends Controller
 
         // Check if organ exists
         $organ = Organ::find($organId);
-        if (!$organ) {
+        if (! $organ) {
             return Helper::errorResponse('Organ not found', 404);
         }
 
@@ -170,10 +148,6 @@ class MonthlyIncomeExpenseController extends Controller
 
     /**
      * Get detailed monthly changes for a specific deposit
-     *
-     * @param Request $request
-     * @param int $depositId
-     * @return JsonResponse
      */
     public function getDetailedMonthlyChanges(Request $request, int $depositId): JsonResponse
     {
@@ -185,7 +159,7 @@ class MonthlyIncomeExpenseController extends Controller
 
         // Check if deposit exists
         $deposit = Deposit::find($depositId);
-        if (!$deposit) {
+        if (! $deposit) {
             return Helper::errorResponse('Deposit not found', 404);
         }
 
@@ -197,8 +171,6 @@ class MonthlyIncomeExpenseController extends Controller
 
     /**
      * Get available deposits for income/expense calculations
-     *
-     * @return JsonResponse
      */
     public function getAvailableDeposits(): JsonResponse
     {
@@ -209,8 +181,6 @@ class MonthlyIncomeExpenseController extends Controller
 
     /**
      * Get available organs for income/expense calculations
-     *
-     * @return JsonResponse
      */
     public function getAvailableOrgans(): JsonResponse
     {
@@ -221,22 +191,19 @@ class MonthlyIncomeExpenseController extends Controller
 
     /**
      * Get available months for a specific deposit
-     *
-     * @param int $depositId
-     * @return JsonResponse
      */
     public function getAvailableMonths(int $depositId): JsonResponse
     {
         // Check if deposit exists
         $deposit = Deposit::find($depositId);
-        if (!$deposit) {
+        if (! $deposit) {
             return Helper::errorResponse('Deposit not found', 404);
         }
 
         try {
             // Get all months that have balance data
             $balances = \DB::table('balances')
-                ->where('deposit_id', (int)$depositId)
+                ->where('deposit_id', (int) $depositId)
                 ->where('rahkaran_status', 'success')
                 ->where('rahkaran_balance', '!=', null)
                 ->whereNotNull('rahkaran_fetched_at')
@@ -252,21 +219,18 @@ class MonthlyIncomeExpenseController extends Controller
                 'available_months' => $months,
             ]);
         } catch (\Exception $e) {
-            return Helper::errorResponse('Error retrieving available months: ' . $e->getMessage(), 500);
+            return Helper::errorResponse('Error retrieving available months: '.$e->getMessage(), 500);
         }
     }
 
     /**
      * Get available months for a specific organ
-     *
-     * @param int $organId
-     * @return JsonResponse
      */
     public function getOrganAvailableMonths(int $organId): JsonResponse
     {
         // Check if organ exists
         $organ = Organ::with('deposits')->find($organId);
-        if (!$organ) {
+        if (! $organ) {
             return Helper::errorResponse('Organ not found', 404);
         }
 
@@ -274,7 +238,7 @@ class MonthlyIncomeExpenseController extends Controller
             // Get all months that have balance data for any deposit of this organ
             $balances = \DB::table('balances')
                 ->join('deposits', 'balances.deposit_id', '=', 'deposits.id')
-                ->where('deposits.organ_id', (int)$organId)
+                ->where('deposits.organ_id', (int) $organId)
                 ->where('balances.rahkaran_status', 'success')
                 ->where('balances.rahkaran_balance', '!=', null)
                 ->whereNotNull('balances.rahkaran_fetched_at')
@@ -290,7 +254,7 @@ class MonthlyIncomeExpenseController extends Controller
                 'available_months' => $months,
             ]);
         } catch (\Exception $e) {
-            return Helper::errorResponse('Error retrieving available months: ' . $e->getMessage(), 500);
+            return Helper::errorResponse('Error retrieving available months: '.$e->getMessage(), 500);
         }
     }
 }

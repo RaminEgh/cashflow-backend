@@ -19,6 +19,8 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             RolePermissionSeeder::class,
             TimelineEntrySeeder::class,
+            BalanceSeeder::class,
+            UpdateDepositsBalanceSeeder::class,
         ]);
     }
 }

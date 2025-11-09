@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Admin\DepositController;
 use App\Http\Controllers\Api\V1\Admin\OrganController;
 use App\Http\Controllers\Api\V1\Admin\PermissionController;
 use App\Http\Controllers\Api\V1\Admin\RoleController;
+use App\Http\Controllers\Api\V1\Admin\UploadController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\MonthlyIncomeExpenseController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -99,5 +100,14 @@ Route::group(['prefix' => 'admin', 'middleware' => ['is-admin']], function () {
         Route::post('/', [RoleController::class, 'store'])->middleware('can:'.AdminPermissionKey::ROLE_CREATE);
         Route::get('/{role}', [RoleController::class, 'show'])->middleware('can:'.AdminPermissionKey::ROLE_SHOW);
         Route::put('/{role}', [RoleController::class, 'update'])->middleware('can:'.AdminPermissionKey::ROLE_EDIT);
+    });
+
+    Route::group(['prefix' => 'uploads'], function () {
+        Route::get('/', [UploadController::class, 'index']);
+        Route::get('/statistics', [UploadController::class, 'statistics']);
+        Route::get('/user-statistics', [UploadController::class, 'userStatistics']);
+        Route::post('/bulk-delete', [UploadController::class, 'bulkDelete']);
+        Route::get('/{upload}', [UploadController::class, 'show']);
+        Route::delete('/{upload}', [UploadController::class, 'destroy']);
     });
 });

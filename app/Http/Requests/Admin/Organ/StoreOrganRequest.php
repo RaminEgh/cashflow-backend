@@ -26,8 +26,8 @@ class StoreOrganRequest extends FormRequest
             'en_name' => 'required|string|min:3',
             'description' => 'string|min:3',
             'phone' => 'required|string|min:4',
-            'admins_id' => 'required|array',
-            'admins_id.*' => 'required|integer|exists:users,id',
+            'admins_id' => 'array',
+            'admins_id.*' => 'integer|exists:users,id',
             //            'background' => 'required|string|min:8',
             //            'logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];

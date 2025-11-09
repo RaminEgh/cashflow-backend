@@ -24,8 +24,8 @@ class OrganCollection extends ResourceCollection
                 'phone' => $item->phone,
                 'description' => $item->description,
                 'admins_id' => UserResource::collection($item->admins),
-                'logo' => url('storage/' . $item->logo),
-                'background' => $item->background,
+                'logo' => $item->logo ? url('/api/upload/' . $item->logo . '/display') : null,
+                'background' => $item->background ? url('/api/upload/' . $item->background . '/display') : null,
             ];
         });
     }

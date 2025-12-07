@@ -122,7 +122,7 @@ class OrganController extends Controller
         DB::beginTransaction();
         $organ->update([
             ...$request->validated(),
-            'updated_by' => auth()->id(),
+            'updated_by' => auth()->id()
         ]);
 
         if ($request->has('admins_id')) {

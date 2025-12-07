@@ -147,7 +147,7 @@ class ParsianBankAdapter implements BankAdapterInterface
      */
     public function getBalance(): float
     {
-        $accountNumber = $this->credentials['accountNumber'] ?? throw new \Exception('Account number is required');
+        $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? throw new \Exception('Account number is required');
 
         $url = $this->apiEndpoint . '/getAccountBalance';
 
@@ -191,7 +191,7 @@ class ParsianBankAdapter implements BankAdapterInterface
      */
     public function getAccountBalance(): array
     {
-        $accountNumber = $this->credentials['accountNumber'] ?? throw new \Exception('Account number is required');
+        $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? throw new \Exception('Account number is required');
 
         $url = $this->apiEndpoint . '/getAccountBalance';
 

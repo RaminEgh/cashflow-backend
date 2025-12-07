@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1;
+namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
@@ -219,7 +219,7 @@ class MonthlyIncomeExpenseController extends Controller
                 'available_months' => $months,
             ]);
         } catch (\Exception $e) {
-            return Helper::errorResponse('Error retrieving available months: '.$e->getMessage(), 500);
+            return Helper::errorResponse('Error retrieving available months: ' . $e->getMessage(), 500);
         }
     }
 
@@ -254,7 +254,7 @@ class MonthlyIncomeExpenseController extends Controller
                 'available_months' => $months,
             ]);
         } catch (\Exception $e) {
-            return Helper::errorResponse('Error retrieving available months: '.$e->getMessage(), 500);
+            return Helper::errorResponse('Error retrieving available months: ' . $e->getMessage(), 500);
         }
     }
 }

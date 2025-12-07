@@ -5,12 +5,12 @@ namespace App\Jobs;
 use App\Models\Deposit;
 use App\Services\Banking\BankAdapterFactory;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class FetchBankAccountBalance implements ShouldQueue
@@ -18,6 +18,7 @@ class FetchBankAccountBalance implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+
     public int $timeout = 60;
 
     /**
@@ -34,11 +35,19 @@ class FetchBankAccountBalance implements ShouldQueue
     public function handle(BankAdapterFactory $bankFactory): void
     {
         try {
-            Log::info("Starting to fetch balance for deposit ID: {$this->deposit->branch_code}");
+            // Reload the deposit and its bank relationship since it's not loaded after serialization
+            $this->deposit->refresh();
+            $this->deposit->load('bank');
+
+            if (! $this->deposit->bank) {
+                throw new \Exception("Bank not found for deposit ID: {$this->deposit->id}");
+            }
+
+            Log::info("Starting to fetch balance for deposit ID: {$this->deposit->number}");
 
             $adapter = $bankFactory->make($this->deposit->bank->en_name);
             $balance = $adapter->setAccount([
-                'number' => $this->deposit->number
+                'accountNumber' => $this->deposit->number,
             ])->getBalance();
             // Call mock API to get bank balance
             // $balance = $this->fetchBalanceFromMockApi();
@@ -47,17 +56,16 @@ class FetchBankAccountBalance implements ShouldQueue
             $this->deposit->balances()->create([
                 'balance' => $balance,
                 'fetched_at' => now(),
-                'status' => 'success'
+                'status' => 'success',
             ]);
 
             // Update deposit with new balance
             $this->deposit->update([
                 'balance' => $balance,
-                'balance_last_synced_at' => now()
+                'balance_last_synced_at' => now(),
             ]);
 
             Log::info("Successfully updated balance for deposit ID: {$this->deposit->id} with balance: {$balance}");
-
         } catch (Throwable $e) {
             Log::error("Failed to fetch balance for deposit ID {$this->deposit->id}: " . $e->getMessage());
 
@@ -66,7 +74,7 @@ class FetchBankAccountBalance implements ShouldQueue
                 'balance' => 0,
                 'fetched_at' => now(),
                 'status' => 'failed',
-                'error_message' => $e->getMessage()
+                'error_message' => $e->getMessage(),
             ]);
 
             // This will cause the job to fail and be retried if $tries > 1
@@ -95,23 +103,22 @@ class FetchBankAccountBalance implements ShouldQueue
                     'account_type' => 'checking',
                     'available_balance' => rand(800, 45000),
                     'pending_transactions' => rand(0, 5),
-                ]
+                ],
             ];
 
-            Log::info("Mock API response received", [
+            Log::info('Mock API response received', [
                 'deposit_id' => $this->deposit->id,
-                'balance' => $mockResponse['data']['balance']
+                'balance' => $mockResponse['data']['balance'],
             ]);
 
             return (float) $mockResponse['data']['balance'];
-
         } catch (\Exception $e) {
-            Log::error("Mock API call failed", [
+            Log::error('Mock API call failed', [
                 'deposit_id' => $this->deposit->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
-            throw new \Exception("Failed to fetch balance from mock API: " . $e->getMessage());
+            throw new \Exception('Failed to fetch balance from mock API: ' . $e->getMessage());
         }
     }
 
@@ -123,23 +130,23 @@ class FetchBankAccountBalance implements ShouldQueue
         try {
             $response = Http::timeout(30)->get('http://localhost:8000/api/mock/bank/balance', [
                 'account_number' => $this->deposit->account_number,
-                'bank_name' => $this->deposit->bank->name ?? 'Mock Bank'
+                'bank_name' => $this->deposit->bank->name ?? 'Mock Bank',
             ]);
 
             if ($response->successful()) {
                 $data = $response->json();
+
                 return (float) $data['data']['balance'];
             }
 
-            throw new \Exception("API request failed with status: " . $response->status());
-
+            throw new \Exception('API request failed with status: ' . $response->status());
         } catch (\Exception $e) {
-            Log::error("HTTP API call failed", [
+            Log::error('HTTP API call failed', [
                 'deposit_id' => $this->deposit->id,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
-            throw new \Exception("Failed to fetch balance from HTTP API: " . $e->getMessage());
+            throw new \Exception('Failed to fetch balance from HTTP API: ' . $e->getMessage());
         }
     }
 }

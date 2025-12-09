@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Events\LogoutEvent;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\V1\Admin\Permission\PermissionCollection;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Events\LogoutEvent;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -25,11 +27,11 @@ class AuthenticatedSessionController extends Controller
 
             $user = User::where('email', $validated['email'])->first();
 
-            if (!$user) {
+            if (! $user) {
                 return Helper::errorResponse(__('auth.failed'), null, 403);
             }
 
-            if (!Hash::check($validated['password'], $user->password) || ($user->status !== User::STATUS_INACTIVE && $user->status !== User::STATUS_ACTIVE)) {
+            if (! Hash::check($validated['password'], $user->password) || ($user->status !== User::STATUS_INACTIVE && $user->status !== User::STATUS_ACTIVE)) {
                 return Helper::errorResponse(__('auth.failed'), null, 403);
             }
 
@@ -59,11 +61,63 @@ class AuthenticatedSessionController extends Controller
                 'token' => $token,
             ]);
         } catch (\Exception $e) {
-            \Log::error('Login failed', [
-                'error' => $e->getMessage()
+            Log::error('Login failed', [
+                'error' => $e->getMessage(),
             ]);
+
             return Helper::errorResponse(__('auth.error_login'), 401);
         }
+    }
+
+    /**
+     * Handle web-based login for Horizon dashboard access.
+     */
+    public function webLogin(Request $request)
+    {
+        $request->validate([
+            'email' => ['required', 'string', 'email'],
+            'password' => ['required', 'string'],
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            return back()->withErrors([
+                'email' => __('auth.failed'),
+            ])->withInput($request->only('email'));
+        }
+
+        if ($user->status !== User::STATUS_ACTIVE && $user->status !== User::STATUS_INACTIVE) {
+            return back()->withErrors([
+                'email' => __('auth.failed'),
+            ])->withInput($request->only('email'));
+        }
+
+        if ($user->type !== User::TYPE_ADMIN) {
+            return back()->withErrors([
+                'email' => 'Only admin users can access Horizon.',
+            ])->withInput($request->only('email'));
+        }
+
+        if ($user->status === User::STATUS_INACTIVE) {
+            $user->status = User::STATUS_ACTIVE;
+        }
+
+        $user->logged_at = now();
+        $user->save();
+
+        DB::table('user_sessions')->insert([
+            'user_id' => $user->id,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'description' => 'ورود',
+            'type' => 1,
+            'last_activity' => now(),
+        ]);
+
+        Auth::guard('web')->login($user, $request->boolean('remember'));
+
+        return redirect()->intended('/horizon');
     }
 
     /**
@@ -88,14 +142,15 @@ class AuthenticatedSessionController extends Controller
             ]);
 
             return response()->json([
-                'message' => 'Successfully logged out'
+                'message' => 'Successfully logged out',
             ]);
         } catch (\Exception $e) {
-            \Log::error('Logout failed', [
-                'error' => $e->getMessage()
+            Log::error('Logout failed', [
+                'error' => $e->getMessage(),
             ]);
+
             return response()->json([
-                'message' => 'Error during logout'
+                'message' => 'Error during logout',
             ], 500);
         }
     }

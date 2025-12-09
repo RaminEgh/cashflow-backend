@@ -4,12 +4,11 @@ namespace App\Providers;
 
 use App\Constants\CacheKey;
 use App\Models\Permission;
-use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Database\QueryException;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
 
                 foreach ($allPermissions as $permission) {
                     Gate::define($permission->slug, function ($user) use ($permission) {
-                        $roles = Cache::remember(CacheKey::ROLES_PERMISSION . $permission->slug . '_' . auth()->id(), CacheKey::TIME_FIVE_MINUTES, function () use ($permission) {
+                        $roles = Cache::remember(CacheKey::ROLES_PERMISSION.$permission->slug.'_'.auth()->id(), CacheKey::TIME_FIVE_MINUTES, function () use ($permission) {
                             return $permission->roles;
                         });
 
@@ -48,9 +47,9 @@ class AppServiceProvider extends ServiceProvider
             }
         } catch (QueryException $e) {
             // Log the error but don't fail the application boot
-            \Log::warning('Database not ready during boot: ' . $e->getMessage());
+            \Log::warning('Database not ready during boot: '.$e->getMessage());
         } catch (\Exception $e) {
-            \Log::warning('Error during AppServiceProvider boot: ' . $e->getMessage());
+            \Log::warning('Error during AppServiceProvider boot: '.$e->getMessage());
         }
     }
 }

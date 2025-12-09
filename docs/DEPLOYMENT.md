@@ -162,6 +162,260 @@ sudo systemctl enable redis-server
 sudo systemctl start redis-server
 ```
 
+### Install phpMyAdmin (Optional - Database Management Tool)
+
+phpMyAdmin provides a web interface for managing your MariaDB databases.
+
+**Install phpMyAdmin:**
+
+**Option 1: Automated Installation (Recommended)**
+
+Use the provided installation script for hassle-free setup:
+
+```bash
+# Make script executable
+chmod +x install-phpmyadmin.sh
+
+# Run the script
+sudo ./install-phpmyadmin.sh <subdomain> [password]
+
+# Example:
+sudo ./install-phpmyadmin.sh pma.abc.ir PhpMyAdmin2024!@#
+```
+
+The script will:
+
+- Install phpMyAdmin non-interactively
+- Create database and user with proper password policy
+- Configure Nginx automatically
+- Optionally setup SSL with Let's Encrypt
+- Handle all configuration files
+
+**Option 2: Manual Installation**
+
+```bash
+sudo apt install -y phpmyadmin
+```
+
+**Alternative Installation (if password validation causes issues):**
+
+If you encounter password policy errors during installation, you can install without automatic database configuration:
+
+```bash
+# Remove partial installation
+sudo apt remove --purge phpmyadmin -y
+
+# Reinstall with manual configuration
+sudo DEBIAN_FRONTEND=noninteractive apt install -y phpmyadmin
+
+# Create phpMyAdmin database and user manually
+sudo mysql -u root -p
+```
+
+Then run these SQL commands:
+
+```sql
+CREATE DATABASE phpmyadmin;
+CREATE USER 'phpmyadmin'@'localhost' IDENTIFIED BY 'PhpMyAdmin2024!';
+GRANT ALL PRIVILEGES ON phpmyadmin.* TO 'phpmyadmin'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+Configure phpMyAdmin to use this database:
+
+```bash
+sudo nano /etc/phpmyadmin/config-db.php
+```
+
+Add or update:
+
+```php
+<?php
+$dbuser='phpmyadmin';
+$dbpass='PhpMyAdmin2024!';
+$basepath='';
+$dbname='phpmyadmin';
+$dbserver='localhost';
+$dbport='3306';
+$dbtype='mysql';
+```
+
+Import phpMyAdmin tables:
+
+```bash
+sudo mysql -u root -p phpmyadmin < /usr/share/phpmyadmin/sql/create_tables.sql
+```
+
+**During installation, you'll be prompted with several questions:**
+
+1. **Web server to configure automatically**: Select `None` (press Tab, then Space to deselect, then Enter)
+   - We'll configure Nginx manually
+
+2. **Configure database for phpmyadmin with dbconfig-common**: Choose `Yes`
+
+3. **Connection method for MySQL database**: Select `Unix socket` (recommended for local connections)
+   - Unix socket is faster and more secure when phpMyAdmin and MariaDB are on the same server
+
+4. **Authentication plugin for MySQL database**: Select `default` (recommended)
+   - This uses the server's default authentication method
+   - Most compatible with MariaDB and phpMyAdmin
+
+5. **MySQL username for phpmyadmin**: Press Ok to accept default `phpmyadmin@localhost`
+   - This is the database user that phpMyAdmin will use for its own configuration
+   - It's separate from your application database users
+
+6. **MySQL application password for phpmyadmin**: Enter a strong password
+   - **Important**: If you enabled VALIDATE PASSWORD component with MEDIUM or STRONG policy, your password must meet these requirements:
+     - Minimum 8 characters
+     - Contains uppercase letters (A-Z)
+     - Contains lowercase letters (a-z)
+     - Contains numbers (0-9)
+     - Contains special characters (!@#$%^&*)
+   - Example: `PhpMyAdmin2024!@#`
+   - If you get "ERROR 1819: Your password does not satisfy the current policy requirements", select `retry` and use a stronger password
+
+**Configure Nginx for phpMyAdmin:**
+
+Create a symbolic link to make phpMyAdmin accessible:
+
+```bash
+sudo ln -s /usr/share/phpmyadmin /var/www/phpmyadmin
+```
+
+Create Nginx configuration:
+
+```bash
+sudo nano /etc/nginx/sites-available/phpmyadmin
+```
+
+Add the following configuration:
+
+```nginx
+server {
+    listen 8080;
+    server_name your_server_ip;
+    root /var/www/phpmyadmin;
+
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+
+    # Deny access to configuration files
+    location ~ ^/libraries {
+        deny all;
+    }
+    
+    location ~ ^/setup {
+        deny all;
+    }
+}
+```
+
+**Enable the site:**
+
+```bash
+sudo ln -s /etc/nginx/sites-available/phpmyadmin /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+**Configure firewall to allow phpMyAdmin access:**
+
+```bash
+sudo ufw allow 8080/tcp
+```
+
+**Secure phpMyAdmin (Highly Recommended):**
+
+1. **Change the access URL** (protect against automated attacks):
+
+```bash
+sudo nano /etc/nginx/sites-available/phpmyadmin
+```
+
+Change the root to include a secret path:
+
+```nginx
+location /secretpath {
+    alias /usr/share/phpmyadmin;
+    index index.php;
+    
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME /usr/share/phpmyadmin$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
+```
+
+2. **Add HTTP Basic Authentication:**
+
+```bash
+# Create password file
+sudo htpasswd -c /etc/nginx/.phpmyadmin-htpasswd admin
+# Enter a strong password when prompted
+
+# Add authentication to Nginx config
+sudo nano /etc/nginx/sites-available/phpmyadmin
+```
+
+Add inside the server block:
+
+```nginx
+auth_basic "Restricted Access";
+auth_basic_user_file /etc/nginx/.phpmyadmin-htpasswd;
+```
+
+3. **Reload Nginx:**
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+**Access phpMyAdmin:**
+
+- Open your browser: `http://your_server_ip:8080` or `http://your_server_ip:8080/secretpath`
+- Login with your MariaDB credentials (e.g., `root` or `cashflow_user`)
+
+**Important Security Notes:**
+
+- Never expose phpMyAdmin on port 80 or 443 without SSL
+- Always use strong passwords
+- Consider using phpMyAdmin only when needed and disable it otherwise
+- Use HTTP authentication as an additional security layer
+- For production, consider using SSL/TLS for phpMyAdmin
+- Alternatively, use SSH tunneling: `ssh -L 8080:localhost:8080 ubuntu@your_server_ip`
+
+**To disable phpMyAdmin when not needed:**
+
+```bash
+sudo rm /etc/nginx/sites-enabled/phpmyadmin
+sudo systemctl reload nginx
+```
+
+**To re-enable:**
+
+```bash
+sudo ln -s /etc/nginx/sites-available/phpmyadmin /etc/nginx/sites-enabled/
+sudo systemctl reload nginx
+```
+
 ---
 
 ## 3. Configure Application User

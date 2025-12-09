@@ -21,14 +21,5 @@ class AdminSeeder extends Seeder
             'type' => User::TYPE_ADMIN,
             'status' => User::STATUS_ACTIVE,
         ]);
-
-        User::create([
-            'first_name' => 'ادمین',
-            'last_name' => 'سیر',
-            'email' => 'sair@gmail.com',
-            'password' => Hash::make('12345678'),
-            'type' => User::TYPE_ORGAN,
-            'status' => User::STATUS_ACTIVE,
-        ]);
     }
 }

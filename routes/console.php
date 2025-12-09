@@ -10,3 +10,7 @@ Artisan::command('inspire', function () {
 
 Schedule::command('app:update-balances')->hourly();
 
+Schedule::command('app:fetch-parsian-bank-balances')->daily();
+
+// Horizon metrics snapshot (runs every minute for real-time metrics)
+Schedule::command('horizon:snapshot')->everyMinute();

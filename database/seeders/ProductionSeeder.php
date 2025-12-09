@@ -54,6 +54,5 @@ class ProductionSeeder extends Seeder
             DB::rollBack();
             $this->command->error('Error occurred: '.$e->getMessage());
         }
-
     }
 }

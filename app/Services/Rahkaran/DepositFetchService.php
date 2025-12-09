@@ -11,25 +11,32 @@ use Illuminate\Support\Facades\Log;
 
 class DepositFetchService
 {
-
     public function fetchAndStore()
     {
 
         $organs = Organ::all();
-        $rahkaranApi = env("RAHKARAN_BASE_ENDPOINT");
+        $rahkaranApi = config('services.rahkaran.base_endpoint');
+
+        if (! $rahkaranApi) {
+            throw new \Exception('RAHKARAN_BASE_ENDPOINT is not set in .env file');
+        }
+
+        // Ensure URL doesn't have trailing slash
+        $rahkaranApi = rtrim($rahkaranApi, '/');
 
         foreach ($organs as $organ) {
             try {
-                $response = Http::get("$rahkaranApi/$organ->slug");
-                if (!$response->successful()) {
+                $response = Http::timeout(30)->get("$rahkaranApi/$organ->slug");
+                if (! $response->successful()) {
                     Log::error("Failed to fetch deposits for organ: {$organ->slug}");
+
                     continue;
                 }
                 $deposits = $response->json();
                 foreach ($deposits as $data) {
-                    $bankName = trim(str_replace("بانک", "", $data['BankTitle'])) ;
+                    $bankName = trim(str_replace('بانک', '', $data['BankTitle']));
                     $bank = Bank::whereName($bankName)->first();
-                    if (!$bank) {
+                    if (! $bank) {
                         $bank = Bank::Create([
                             'name' => $bankName,
                             'en_name' => Helper::persianToLatin($bankName),
@@ -40,7 +47,7 @@ class DepositFetchService
                     }
 
                     $deposit = Deposit::whereNumber($data['AccountNumber'])->first();
-                    if (!$deposit) {
+                    if (! $deposit) {
                         Deposit::Create([
                             'organ_id' => $organ->id,
                             'bank_id' => $bank->id,
@@ -54,10 +61,10 @@ class DepositFetchService
                         ]);
                     }
 
-
                 }
             } catch (\Throwable $e) {
-                Log::error("Error fetching/storing deposits for organ {$organ->slug}: " . $e->getMessage());
+                Log::error("Error fetching/storing deposits for organ {$organ->slug}: ".$e->getMessage());
+
                 continue;
             }
 

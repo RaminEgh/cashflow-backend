@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BalanceStatus;
 use Database\Factories\BalanceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,18 @@ class Balance extends Model
 
     protected $guarded = ['id'];
 
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'status' => BalanceStatus::class,
+            'rahkaran_status' => BalanceStatus::class,
+        ];
+    }
 
     public function deposit(): BelongsTo
     {

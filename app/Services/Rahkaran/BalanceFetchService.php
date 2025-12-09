@@ -2,6 +2,7 @@
 
 namespace App\Services\Rahkaran;
 
+use App\Enums\BalanceStatus;
 use App\Models\Balance;
 use App\Models\Organ;
 use Carbon\Carbon;
@@ -36,8 +37,10 @@ class BalanceFetchService
                     $rahkaranBalance = $response->json();
                     $rahkaranFetchedDate = (Carbon::parse($rahkaranBalance['job_Date']))->toDateTimeString();
 
-                    if (! $deposit->rahkaran_balance_last_synced_at ||
-                        ! Carbon::parse($deposit->rahkaran_balance_last_synced_at)->eq(Carbon::parse($rahkaranFetchedDate))) {
+                    if (
+                        ! $deposit->rahkaran_balance_last_synced_at ||
+                        ! Carbon::parse($deposit->rahkaran_balance_last_synced_at)->eq(Carbon::parse($rahkaranFetchedDate))
+                    ) {
                         $deposit->update([
                             'balance' => null,
                             'balance_last_synced_at' => null,
@@ -54,13 +57,12 @@ class BalanceFetchService
                             'deposit_id' => $deposit->id,
                             'fetched_at' => now(),
                             'rahkaran_fetched_at' => $rahkaranFetchedDate,
-                            'rahkaran_status' => $rahkaranBalance && $rahkaranBalance['balance'] ? 'success' : 'fail',
-                            'status' => 'fail',
+                            'rahkaran_status' => ($rahkaranBalance && $rahkaranBalance['balance']) ? BalanceStatus::Success->value : BalanceStatus::Fail->value,
+                            'status' => BalanceStatus::Fail->value,
                             'balance' => null,
                             'rahkaran_balance' => $rahkaranBalance['balance'],
                         ]);
                     }
-
                 } catch (\Throwable $e) {
                     Log::error("Error fetching/storing balance for deposit {$deposit->number}: ".$e->getMessage());
 
@@ -68,6 +70,5 @@ class BalanceFetchService
                 }
             }
         }
-
     }
 }

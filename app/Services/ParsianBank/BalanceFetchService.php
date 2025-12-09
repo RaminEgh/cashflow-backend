@@ -2,6 +2,7 @@
 
 namespace App\Services\ParsianBank;
 
+use App\Enums\BalanceStatus;
 use App\Models\Balance;
 use App\Models\Bank;
 use App\Models\Deposit;
@@ -81,7 +82,7 @@ class BalanceFetchService
             Balance::create([
                 'deposit_id' => $deposit->id,
                 'fetched_at' => $fetchedAt,
-                'status' => 'success',
+                'status' => BalanceStatus::Success->value,
                 'balance' => $balance,
             ]);
 
@@ -100,7 +101,7 @@ class BalanceFetchService
             Balance::create([
                 'deposit_id' => $deposit->id,
                 'fetched_at' => now(),
-                'status' => 'fail',
+                'status' => BalanceStatus::Fail->value,
                 'balance' => null,
             ]);
 

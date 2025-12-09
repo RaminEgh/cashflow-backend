@@ -2,6 +2,7 @@
 
 namespace App\Services\Banking;
 
+use App\Enums\BalanceStatus;
 use App\Models\Balance;
 use App\Models\Organ;
 use Carbon\Carbon;
@@ -14,16 +15,15 @@ class IncomeOutgoingService
     /**
      * Calculate monthly income and expenses for a specific deposit
      *
-     * @param int $depositId
-     * @param string $yearMonth Format: '2024-01'
-     * @return array
+     * @param  string  $yearMonth  Format: '2024-01'
+     *
      * @throws \Exception
      */
     public function calculateMonthlyIncomeOutgoing(int $depositId, string $yearMonth): array
     {
-        list($year, $month) = explode('/', $yearMonth);
-        $month = (int)$month;
-        $year = (int)$year;
+        [$year, $month] = explode('/', $yearMonth);
+        $month = (int) $month;
+        $year = (int) $year;
 
         if ($month >= 1 && $month <= 6) {
             $lastDay = 31;
@@ -39,7 +39,6 @@ class IncomeOutgoingService
         $startGregorian = Verta::parse($startOfMonthJalali)->datetime()->format('Y-m-d');
         $endGregorian = Verta::parse($endOfMonthJalali)->datetime()->format('Y-m-d');
 
-
         $startGregorian = Carbon::parse($startGregorian);
         $endGregorian = Carbon::parse($endGregorian);
 
@@ -51,7 +50,7 @@ class IncomeOutgoingService
             Log::info('No monthly balances found for period', [
                 'deposit_id' => $depositId,
                 'startDate' => $startGregorian->toDateTimeString(),
-                'endDate'   => $endGregorian->toDateTimeString(),
+                'endDate' => $endGregorian->toDateTimeString(),
             ]);
 
             return [
@@ -89,9 +88,8 @@ class IncomeOutgoingService
     /**
      * Calculate monthly income and outgoing for all deposits of an organ
      *
-     * @param int $organId
-     * @param string $yearMonth Format: '2024-01'
-     * @return array
+     * @param  int  $organId
+     * @param  string  $yearMonth  Format: '2024-01'
      */
     public function calculateOrganMonthlyIncomeOutgoing(Organ $organ, string $yearMonth): array
     {
@@ -109,6 +107,7 @@ class IncomeOutgoingService
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
                 ]);
+
                 continue;
             }
             Log::alert('$result');
@@ -137,8 +136,7 @@ class IncomeOutgoingService
     /**
      * Calculate monthly income and expenses for all deposits
      *
-     * @param string $yearMonth Format: '2024-01'
-     * @return Collection
+     * @param  string  $yearMonth  Format: '2024-01'
      */
     public function calculateAllDepositsMonthlyIncomeOutgoing(Organ $organ, string $yearMonth): Collection
     {
@@ -157,8 +155,7 @@ class IncomeOutgoingService
     /**
      * Calculate monthly income and expenses for all organs
      *
-     * @param string $yearMonth Format: '2024-01'
-     * @return Collection
+     * @param  string  $yearMonth  Format: '2024-01'
      */
     public function calculateAllOrgansMonthlyIncomeOutgoing(string $yearMonth): Collection
     {
@@ -175,15 +172,11 @@ class IncomeOutgoingService
 
     /**
      * Get yearly summary for all deposits of an organ
-     *
-     * @param int $organId
-     * @param int $year
-     * @return array
      */
     public function getOrganYearlySummary(int $organId, int $year): array
     {
         $organ = Organ::with('deposits')->find($organId);
-        if (!$organ) {
+        if (! $organ) {
             return [
                 'organ_id' => $organId,
                 'year' => $year,
@@ -228,15 +221,11 @@ class IncomeOutgoingService
 
     /**
      * Get balance at a specific date (last balance before or on that date)
-     *
-     * @param int $depositId
-     * @param Carbon $date
-     * @return int|null
      */
     private function getBalanceAtDate(int $depositId, Carbon $date): ?int
     {
         $balance = Balance::where('deposit_id', $depositId)
-            ->where('status', 'success')
+            ->where('status', BalanceStatus::Success->value)
             ->where('balance', '!=', null)
             ->where('fetched_at', '<=', $date)
             ->orderBy('fetched_at', 'desc')
@@ -247,16 +236,11 @@ class IncomeOutgoingService
 
     /**
      * Get all balance records for a specific month
-     *
-     * @param int $depositId
-     * @param Carbon $startDate
-     * @param Carbon $endDate
-     * @return Collection
      */
     private function getMonthlyBalances(int $depositId, Carbon $startDate, Carbon $endDate): Collection
     {
         return Balance::where('deposit_id', $depositId)
-            ->where('status', 'success')
+            ->where('status', BalanceStatus::Success->value)
             ->where('balance', '!=', null)
             ->whereBetween('fetched_at', [$startDate, $endDate])
             ->orderBy('fetched_at', 'asc')
@@ -266,11 +250,6 @@ class IncomeOutgoingService
     /**
      * Calculate income based on balance changes
      * Income = positive changes in balance
-     *
-     * @param int|null $startBalance
-     * @param int|null $endBalance
-     * @param Collection $monthlyBalances
-     * @return int
      */
     private function calculateIncome(?int $startBalance, ?int $endBalance, Collection $monthlyBalances): int
     {
@@ -294,11 +273,6 @@ class IncomeOutgoingService
     /**
      * Calculate expenses based on balance changes
      * Expenses = negative changes in balance
-     *
-     * @param int|null $startBalance
-     * @param int|null $endBalance
-     * @param Collection $monthlyBalances
-     * @return int
      */
     private function calculateOutgoing(?int $startBalance, ?int $endBalance, Collection $monthlyBalances): int
     {
@@ -321,10 +295,6 @@ class IncomeOutgoingService
 
     /**
      * Get monthly summary for a specific deposit
-     *
-     * @param int $depositId
-     * @param int $year
-     * @return Collection
      */
     public function getYearlySummary(int $depositId, int $year): Collection
     {
@@ -342,9 +312,7 @@ class IncomeOutgoingService
     /**
      * Get detailed balance changes for a specific month
      *
-     * @param int $depositId
-     * @param string $yearMonth Format: '2024-01'
-     * @return array
+     * @param  string  $yearMonth  Format: '2024-01'
      */
     public function getDetailedMonthlyChanges(int $depositId, string $yearMonth): array
     {

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\BalanceStatus;
 use App\Models\Deposit;
 use App\Services\Banking\BankAdapterFactory;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -56,7 +57,7 @@ class FetchBankAccountBalance implements ShouldQueue
             $this->deposit->balances()->create([
                 'balance' => $balance,
                 'fetched_at' => now(),
-                'status' => 'success',
+                'status' => BalanceStatus::Success->value,
             ]);
 
             // Update deposit with new balance
@@ -73,8 +74,7 @@ class FetchBankAccountBalance implements ShouldQueue
             $this->deposit->balances()->create([
                 'balance' => 0,
                 'fetched_at' => now(),
-                'status' => 'failed',
-                'error_message' => $e->getMessage(),
+                'status' => BalanceStatus::Fail->value,
             ]);
 
             // This will cause the job to fail and be retried if $tries > 1

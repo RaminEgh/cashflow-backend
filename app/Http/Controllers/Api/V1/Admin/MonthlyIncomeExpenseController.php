@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Enums\BalanceStatus;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Models\Deposit;
@@ -204,7 +205,7 @@ class MonthlyIncomeExpenseController extends Controller
             // Get all months that have balance data
             $balances = \DB::table('balances')
                 ->where('deposit_id', (int) $depositId)
-                ->where('rahkaran_status', 'success')
+                ->where('rahkaran_status', BalanceStatus::Success->value)
                 ->where('rahkaran_balance', '!=', null)
                 ->whereNotNull('rahkaran_fetched_at')
                 ->select('rahkaran_fetched_at')
@@ -219,7 +220,7 @@ class MonthlyIncomeExpenseController extends Controller
                 'available_months' => $months,
             ]);
         } catch (\Exception $e) {
-            return Helper::errorResponse('Error retrieving available months: ' . $e->getMessage(), 500);
+            return Helper::errorResponse('Error retrieving available months: '.$e->getMessage(), 500);
         }
     }
 
@@ -239,7 +240,7 @@ class MonthlyIncomeExpenseController extends Controller
             $balances = \DB::table('balances')
                 ->join('deposits', 'balances.deposit_id', '=', 'deposits.id')
                 ->where('deposits.organ_id', (int) $organId)
-                ->where('balances.rahkaran_status', 'success')
+                ->where('balances.rahkaran_status', BalanceStatus::Success->value)
                 ->where('balances.rahkaran_balance', '!=', null)
                 ->whereNotNull('balances.rahkaran_fetched_at')
                 ->select('balances.rahkaran_fetched_at')
@@ -254,7 +255,7 @@ class MonthlyIncomeExpenseController extends Controller
                 'available_months' => $months,
             ]);
         } catch (\Exception $e) {
-            return Helper::errorResponse('Error retrieving available months: ' . $e->getMessage(), 500);
+            return Helper::errorResponse('Error retrieving available months: '.$e->getMessage(), 500);
         }
     }
 }

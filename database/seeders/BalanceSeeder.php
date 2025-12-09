@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\BalanceStatus;
 use App\Models\Balance;
 use App\Models\Deposit;
 use Carbon\Carbon;
@@ -92,8 +93,8 @@ class BalanceSeeder extends Seeder
                     'deposit_id' => $deposit->id,
                     'fetched_at' => $currentDate->copy()->setTime(12, 0, 0),
                     'rahkaran_fetched_at' => $currentDate->copy()->setTime(12, 0, 0),
-                    'status' => 'success',
-                    'rahkaran_status' => 'success',
+                    'status' => BalanceStatus::Success->value,
+                    'rahkaran_status' => BalanceStatus::Success->value,
                     'balance' => $balance,
                     'rahkaran_balance' => $rahkaranBalance,
                     'created_at' => now(),

@@ -164,21 +164,57 @@ sudo systemctl start redis-server
 
 ---
 
-## 3. Create Application User
+## 3. Configure Application User
+
+Add the `ubuntu` user to the `www-data` group to ensure proper permissions:
 
 ```bash
-sudo adduser --disabled-password --gecos "" cashflow
-sudo usermod -aG www-data cashflow
+sudo usermod -aG www-data ubuntu
 ```
 
-### Setup SSH Key Access (if deploying via Git)
+**Note:** You may need to log out and log back in for the group changes to take effect, or run:
 
 ```bash
-sudo -u cashflow mkdir -p /home/cashflow/.ssh
-sudo -u cashflow chmod 700 /home/cashflow/.ssh
-# Add your public key to /home/cashflow/.ssh/authorized_keys
-sudo -u cashflow chmod 600 /home/cashflow/.ssh/authorized_keys
+newgrp www-data
 ```
+
+### Setup SSH Keys for GitHub (if using SSH clone)
+
+If you plan to clone using SSH (e.g., `git@github.com:...`), you need to set up SSH keys:
+
+```bash
+# Generate SSH key (if you don't have one)
+ssh-keygen -t ed25519 -C "your_email@example.com"
+# Press Enter to accept default location (~/.ssh/id_ed25519)
+# Enter a passphrase or press Enter for no passphrase
+
+# Start SSH agent
+eval "$(ssh-agent -s)"
+
+# Add SSH key to agent
+ssh-add ~/.ssh/id_ed25519
+
+# Display public key to add to GitHub
+cat ~/.ssh/id_ed25519.pub
+```
+
+**Add the public key to GitHub:**
+
+1. Copy the output from `cat ~/.ssh/id_ed25519.pub`
+2. Go to GitHub → Settings → SSH and GPG keys
+3. Click "New SSH key"
+4. Paste your public key and save
+
+**Test SSH connection:**
+
+```bash
+ssh -T git@github.com
+# Should see: "Hi username! You've successfully authenticated..."
+```
+
+**Alternative: Use HTTPS instead of SSH** (no SSH keys needed):
+
+- Use `https://github.com/username/repo.git` instead of `git@github.com:username/repo.git`
 
 ---
 
@@ -265,23 +301,59 @@ GRANT ALL PRIVILEGES ON DATABASE cashflow_db TO cashflow_user;
 ### Clone Repository
 
 ```bash
-sudo -u cashflow mkdir -p /var/www
-cd /var/www
-sudo -u cashflow git clone <your-repository-url> cashflow-backend
-cd cashflow-backend
+# Create /var/www directory if it doesn't exist and set ownership
+sudo mkdir -p /var/www
+sudo chown ubuntu:www-data /var/www
+
+# Clone the repository (choose one method below)
+```
+
+**Option 1: Clone using SSH (requires SSH keys setup - see section 3)**
+
+```bash
+git clone git@github.com:RaminEgh/cashflow-backend.git /var/www/cashflow-backend
+```
+
+**Option 2: Clone using HTTPS (no SSH keys needed - recommended if SSH not set up)**
+
+```bash
+git clone https://github.com/RaminEgh/cashflow-backend.git /var/www/cashflow-backend
+```
+
+**Navigate to the project directory:**
+
+```bash
+cd /var/www/cashflow-backend
+```
+
+**Troubleshooting:**
+
+**If you get "Permission denied (publickey)" error:**
+
+- This means SSH keys are not set up. Either:
+  1. Set up SSH keys (see section 3 above), or
+  2. Use HTTPS instead: `git clone https://github.com/RaminEgh/cashflow-backend.git /var/www/cashflow-backend`
+
+**If you get "Permission denied" for directory:**
+
+```bash
+# Set proper ownership of /var/www
+sudo chown -R ubuntu:www-data /var/www
+
+# Then try cloning again
 ```
 
 ### Install Dependencies
 
 ```bash
-sudo -u cashflow composer install --optimize-autoloader --no-dev
+composer install --optimize-autoloader --no-dev
 ```
 
 ### Set Permissions
 
 ```bash
 cd /var/www/cashflow-backend
-sudo chown -R cashflow:www-data /var/www/cashflow-backend
+sudo chown -R ubuntu:www-data /var/www/cashflow-backend
 sudo chmod -R 755 /var/www/cashflow-backend
 sudo chmod -R 775 /var/www/cashflow-backend/storage
 sudo chmod -R 775 /var/www/cashflow-backend/bootstrap/cache
@@ -290,8 +362,8 @@ sudo chmod -R 775 /var/www/cashflow-backend/bootstrap/cache
 ### Configure Environment
 
 ```bash
-sudo -u cashflow cp .env.example .env
-sudo -u cashflow nano .env
+cp .env.example .env
+nano .env
 ```
 
 **Update the following in `.env`:**
@@ -327,33 +399,33 @@ SESSION_DOMAIN=.yourdomain.com
 ### Generate Application Key
 
 ```bash
-sudo -u cashflow php artisan key:generate
+php artisan key:generate
 ```
 
 ### Run Migrations
 
 ```bash
-sudo -u cashflow php artisan migrate --force
+php artisan migrate --force
 ```
 
 ### Seed Database (Optional)
 
 ```bash
-sudo -u cashflow php artisan db:seed --force
+php artisan db:seed --force
 ```
 
 ### Create Storage Link
 
 ```bash
-sudo -u cashflow php artisan storage:link
+php artisan storage:link
 ```
 
 ### Optimize Application
 
 ```bash
-sudo -u cashflow php artisan config:cache
-sudo -u cashflow php artisan route:cache
-sudo -u cashflow php artisan view:cache
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 ```
 
 ---
@@ -452,7 +524,7 @@ Description=Cashflow Backend Queue Worker
 After=network.target
 
 [Service]
-User=cashflow
+User=ubuntu
 Group=www-data
 Restart=always
 ExecStart=/usr/bin/php /var/www/cashflow-backend/artisan queue:work --sleep=3 --tries=3 --max-time=3600
@@ -514,7 +586,7 @@ sudo nano /etc/logrotate.d/cashflow-backend
     compress
     delaycompress
     notifempty
-    create 0640 cashflow www-data
+    create 0640 ubuntu www-data
     sharedscripts
 }
 ```
@@ -549,12 +621,12 @@ sudo journalctl -u cashflow-queue -f
 
 ```bash
 cd /var/www/cashflow-backend
-sudo -u cashflow git pull origin main
-sudo -u cashflow composer install --optimize-autoloader --no-dev
-sudo -u cashflow php artisan migrate --force
-sudo -u cashflow php artisan config:cache
-sudo -u cashflow php artisan route:cache
-sudo -u cashflow php artisan view:cache
+git pull origin main
+composer install --optimize-autoloader --no-dev
+php artisan migrate --force
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
 sudo systemctl restart cashflow-queue
 sudo systemctl reload php8.4-fpm
 ```
@@ -562,10 +634,10 @@ sudo systemctl reload php8.4-fpm
 ### Clear Application Cache
 
 ```bash
-sudo -u cashflow php artisan cache:clear
-sudo -u cashflow php artisan config:clear
-sudo -u cashflow php artisan route:clear
-sudo -u cashflow php artisan view:clear
+php artisan cache:clear
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
 ```
 
 ### View Logs
@@ -600,10 +672,10 @@ sudo -u postgres pg_dump cashflow_db > backup_$(date +%Y%m%d_%H%M%S).sql
 
 ```bash
 # Check failed jobs
-sudo -u cashflow php artisan queue:failed
+php artisan queue:failed
 
 # Retry failed jobs
-sudo -u cashflow php artisan queue:retry all
+php artisan queue:retry all
 ```
 
 ---
@@ -613,7 +685,7 @@ sudo -u cashflow php artisan queue:retry all
 ### Permission Issues
 
 ```bash
-sudo chown -R cashflow:www-data /var/www/cashflow-backend
+sudo chown -R ubuntu:www-data /var/www/cashflow-backend
 sudo chmod -R 755 /var/www/cashflow-backend
 sudo chmod -R 775 /var/www/cashflow-backend/storage
 sudo chmod -R 775 /var/www/cashflow-backend/bootstrap/cache
@@ -629,14 +701,14 @@ sudo systemctl status cashflow-queue
 sudo systemctl restart cashflow-queue
 
 # Check for failed jobs
-sudo -u cashflow php artisan queue:failed
+php artisan queue:failed
 ```
 
 ### Database Connection Issues
 
 ```bash
 # Test database connection
-sudo -u cashflow php artisan tinker
+php artisan tinker
 # Then run: DB::connection()->getPdo();
 ```
 
@@ -672,7 +744,7 @@ ls -la /var/run/php/php8.4-fpm.sock
 - **Cron Jobs**: If your application uses scheduled tasks, add them to crontab:
 
   ```bash
-  sudo crontab -u cashflow -e
+  crontab -e
   # Add: * * * * * cd /var/www/cashflow-backend && php artisan schedule:run >> /dev/null 2>&1
   ```
 

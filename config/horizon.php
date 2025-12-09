@@ -83,7 +83,7 @@ return [
     |
     */
 
-    'middleware' => ['web', 'auth:web'],
+    'middleware' => ['is-admin'],
 
     /*
     |--------------------------------------------------------------------------
@@ -216,25 +216,17 @@ return [
     'environments' => [
         'production' => [
             'supervisor-1' => [
-                'connection' => env('QUEUE_CONNECTION', 'database'),
-                'queue' => ['default'],
-                'balance' => 'auto',
-                'autoScalingStrategy' => 'time',
+                'connection' => 'redis',
+                'queue' => ['default', 'high'],
                 'maxProcesses' => 10,
                 'balanceMaxShift' => 1,
                 'balanceCooldown' => 3,
-                'maxTime' => 0,
-                'maxJobs' => 1000,
-                'memory' => 256,
-                'tries' => 3,
-                'timeout' => 120,
-                'nice' => 0,
             ],
         ],
 
         'local' => [
             'supervisor-1' => [
-                'connection' => env('QUEUE_CONNECTION', 'database'),
+                'connection' => 'redis',
                 'queue' => ['default'],
                 'maxProcesses' => 3,
                 'memory' => 128,

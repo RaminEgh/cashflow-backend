@@ -9,7 +9,6 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\V1\Admin\Permission\PermissionCollection;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
@@ -67,57 +66,6 @@ class AuthenticatedSessionController extends Controller
 
             return Helper::errorResponse(__('auth.error_login'), 401);
         }
-    }
-
-    /**
-     * Handle web-based login for Horizon dashboard access.
-     */
-    public function webLogin(Request $request)
-    {
-        $request->validate([
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ]);
-
-        $user = User::where('email', $request->email)->first();
-
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            return back()->withErrors([
-                'email' => __('auth.failed'),
-            ])->withInput($request->only('email'));
-        }
-
-        if ($user->status !== User::STATUS_ACTIVE && $user->status !== User::STATUS_INACTIVE) {
-            return back()->withErrors([
-                'email' => __('auth.failed'),
-            ])->withInput($request->only('email'));
-        }
-
-        if ($user->type !== User::TYPE_ADMIN) {
-            return back()->withErrors([
-                'email' => 'Only admin users can access Horizon.',
-            ])->withInput($request->only('email'));
-        }
-
-        if ($user->status === User::STATUS_INACTIVE) {
-            $user->status = User::STATUS_ACTIVE;
-        }
-
-        $user->logged_at = now();
-        $user->save();
-
-        DB::table('user_sessions')->insert([
-            'user_id' => $user->id,
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'description' => 'ورود',
-            'type' => 1,
-            'last_activity' => now(),
-        ]);
-
-        Auth::guard('web')->login($user, $request->boolean('remember'));
-
-        return redirect()->intended('/horizon');
     }
 
     /**

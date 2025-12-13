@@ -46,7 +46,7 @@ class FetchBankAccountBalance implements ShouldQueue
 
             Log::info("Starting to fetch balance for deposit ID: {$this->deposit->number}");
 
-            $adapter = $bankFactory->make($this->deposit->bank->en_name);
+            $adapter = $bankFactory->make($this->deposit->bank->slug);
             $balance = $adapter->setAccount([
                 'accountNumber' => $this->deposit->number,
             ])->getBalance();

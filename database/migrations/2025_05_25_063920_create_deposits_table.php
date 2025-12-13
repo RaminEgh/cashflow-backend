@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('organ_id');
             $table->unsignedBigInteger('bank_id');
-            $table->smallInteger('branch_code');
+            $table->mediumInteger('branch_code');
             $table->string('branch_name');
             $table->string('number');
             $table->unsignedBigInteger('balance')->nullable();

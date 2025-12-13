@@ -16,6 +16,7 @@ class BankAdapterFactory
 
         return match (strtolower($bankIdentifier)) {
             'parsian' => new ParsianBankAdapter,
+            'parsyan' => new ParsianBankAdapter,
             'mellat' => new MellatBankAdapter,
             'saman' => new SamanBankAdapter,
             default => throw new InvalidArgumentException("Unsupported bank: [{$bankIdentifier}]"),

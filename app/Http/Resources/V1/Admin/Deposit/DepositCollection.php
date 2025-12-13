@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources\V1\Admin\Deposit;
 
-use App\Models\Deposit;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -35,9 +34,12 @@ class DepositCollection extends ResourceCollection
                 'rahkaran_balance' => $item->rahkaran_balance,
                 'rahkaran_balance_last_synced_at' => Carbon::parse($item->rahkaran_balance_last_synced_at)->diffForHumans(),
                 'sheba' => $item->sheba,
-                'type' =>  collect(Deposit::DEPOSITS_KEY_VALUE)->firstWhere('id', $item->type),
+                'type' => [
+                    'id' => $item->type->value,
+                    'name' => $item->type->name(),
+                ],
                 'currency' => $item->currency,
-                'description' => $item->description
+                'description' => $item->description,
             ];
         });
     }

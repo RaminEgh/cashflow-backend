@@ -196,3 +196,5 @@ echo "  3. phpMyAdmin database password: [HIDDEN]"
 echo ""
 echo -e "${GREEN}Done!${NC}"
 
+
+

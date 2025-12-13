@@ -2,6 +2,7 @@
 
 namespace App\Services\Rahkaran;
 
+use App\Enums\DepositType;
 use App\Helpers\Helper;
 use App\Models\Bank;
 use App\Models\Deposit;
@@ -26,7 +27,9 @@ class DepositFetchService
 
         foreach ($organs as $organ) {
             try {
-                $response = Http::timeout(30)->get("$rahkaranApi/$organ->slug");
+                $api = "$rahkaranApi/$organ->slug";
+                Log::info("Fetching deposits for organ: {$api}");
+                $response = Http::timeout(30)->get($api);
                 if (! $response->successful()) {
                     Log::error("Failed to fetch deposits for organ: {$organ->slug}");
 
@@ -54,20 +57,18 @@ class DepositFetchService
                             'branch_code' => $data['BranchCode'],
                             'branch_name' => $data['BankBranch'],
                             'number' => $data['AccountNumber'],
-                            'type' => Deposit::DEPOSIT_CURRENT,
+                            'type' => DepositType::Current,
                             'currency' => 'IRR',
                             'created_by' => 1,
                             'updated_by' => 1,
                         ]);
                     }
-
                 }
             } catch (\Throwable $e) {
-                Log::error("Error fetching/storing deposits for organ {$organ->slug}: ".$e->getMessage());
+                Log::error("Error fetching/storing deposits for organ {$organ->slug}: " . $e->getMessage());
 
                 continue;
             }
-
         }
     }
 }

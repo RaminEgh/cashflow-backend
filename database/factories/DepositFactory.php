@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\DepositType;
 use App\Models\Bank;
-use App\Models\Deposit;
 use App\Models\Organ;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -26,7 +26,7 @@ class DepositFactory extends Factory
             'branch_name' => fake()->company(),
             'number' => fake()->numerify('##########'),
             'sheba' => fake()->numerify('IR##########################'),
-            'type' => fake()->randomElement(Deposit::DEPOSIT_TYPES),
+            'type' => fake()->randomElement(DepositType::cases()),
             'currency' => 'IR-Rial',
             'description' => fake()->sentence(),
             'balance' => fake()->numberBetween(0, 1000000000),

@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Deposit;
+use App\Enums\DepositType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -24,7 +24,7 @@ return new class extends Migration
             $table->timestamp('balance_last_synced_at')->nullable();
             $table->timestamp('rahkaran_balance_last_synced_at')->nullable();
             $table->string('sheba')->nullable();
-            $table->enum('type', Deposit::DEPOSIT_TYPES);
+            $table->enum('type', DepositType::values());
             $table->string('currency');
             $table->string('description')->nullable();
             $table->unsignedBigInteger('created_by');

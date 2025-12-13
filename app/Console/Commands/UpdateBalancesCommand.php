@@ -32,11 +32,12 @@ class UpdateBalancesCommand extends Command
 
         foreach ($deposits as $deposit) {
             // It serializes the job and puts it into the 'jobs' database table.
-            FetchBankAccountBalance::dispatch($deposit);
+            // Tags can be added when dispatching (these will be merged with tags from the job class)
+            FetchBankAccountBalance::dispatch($deposit)
+                ->tags(['balance-update', 'scheduled']);
             $this->line(" - Dispatched job for account: {$deposit->id}");
         }
 
         $this->info('All balance update jobs have been dispatched successfully!');
-
     }
 }

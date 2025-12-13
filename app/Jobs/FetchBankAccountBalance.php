@@ -31,6 +31,29 @@ class FetchBankAccountBalance implements ShouldQueue
     }
 
     /**
+     * Get the tags that should be assigned to the job.
+     *
+     * @return array<int, string>
+     */
+    public function tags(): array
+    {
+        $tags = [
+            'balance-fetch',
+            "deposit:{$this->deposit->id}",
+        ];
+
+        if ($this->deposit->bank_id) {
+            $tags[] = "bank:{$this->deposit->bank_id}";
+        }
+
+        if ($this->deposit->organ_id) {
+            $tags[] = "organ:{$this->deposit->organ_id}";
+        }
+
+        return $tags;
+    }
+
+    /**
      * Execute the job.
      */
     public function handle(BankAdapterFactory $bankFactory): void

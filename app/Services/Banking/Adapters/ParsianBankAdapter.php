@@ -193,6 +193,13 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         $url = $this->apiEndpoint . '/' . rawurlencode(self::SERVICE_GET_ACCOUNT_BALANCE);
 
+        Log::info('Fetching balance from Parsian Bank', [
+            'accountNumber' => $accountNumber,
+            'url' => $url,
+            'apiEndpoint' => $this->apiEndpoint,
+            'serviceName' => self::SERVICE_GET_ACCOUNT_BALANCE,
+        ]);
+
         try {
             $response = Http::timeout(30)
                 ->withHeaders([
@@ -240,10 +247,19 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         $data = $response->json();
 
+        Log::debug('Parsian Bank API response', [
+            'accountNumber' => $accountNumber,
+            'url' => $url,
+            'status' => $response->status(),
+            'data' => $data,
+            'responseBody' => $response->body(),
+        ]);
+
         // Check for ChAccountNotFoundException or similar
         if (isset($data['exception']) || (isset($data['error']) && str_contains(strtolower($data['error']), 'account not found'))) {
             Log::error('Parsian Bank account not found', [
                 'accountNumber' => $accountNumber,
+                'url' => $url,
                 'data' => $data,
             ]);
 
@@ -251,13 +267,22 @@ class ParsianBankAdapter implements BankAdapterInterface
         }
 
         if (isset($data['error']) || ! isset($data['balance'])) {
-            Log::error('Parsian Bank returned an error', [
+            Log::error('Parsian Bank returned an error or missing balance field', [
                 'accountNumber' => $accountNumber,
+                'url' => $url,
                 'data' => $data,
+                'hasError' => isset($data['error']),
+                'hasBalance' => isset($data['balance']),
+                'responseBody' => $response->body(),
             ]);
 
-            throw new \Exception($data['error'] ?? $data['message'] ?? 'Unknown error from Parsian Bank');
+            throw new \Exception($data['error'] ?? $data['message'] ?? 'Unknown error from Parsian Bank - response does not contain balance field');
         }
+
+        Log::info('Successfully fetched balance from Parsian Bank', [
+            'accountNumber' => $accountNumber,
+            'balance' => $data['balance'],
+        ]);
 
         return (float) $data['balance'];
     }

@@ -39,15 +39,15 @@ class FetchBankAccountBalance implements ShouldQueue
     {
         $tags = [
             'balance-fetch',
-            "deposit:{$this->deposit->id}",
+            "deposit:{$this->deposit->number}",
         ];
 
         if ($this->deposit->bank_id) {
-            $tags[] = "bank:{$this->deposit->bank_id}";
+            $tags[] = "bank:{$this->deposit->bank->slug}";
         }
 
         if ($this->deposit->organ_id) {
-            $tags[] = "organ:{$this->deposit->organ_id}";
+            $tags[] = "organ:{$this->deposit->organ->slug}";
         }
 
         return $tags;

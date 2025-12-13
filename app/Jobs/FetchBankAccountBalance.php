@@ -73,6 +73,10 @@ class FetchBankAccountBalance implements ShouldQueue
             $balance = $adapter->setAccount([
                 'accountNumber' => $this->deposit->number,
             ])->getBalance();
+            
+            Log::info('Balance fetched from Parsian Bank', [
+                'balance' => $balance,
+            ]);
             // Call mock API to get bank balance
             // $balance = $this->fetchBalanceFromMockApi();
 

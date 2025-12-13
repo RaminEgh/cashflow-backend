@@ -59,7 +59,7 @@ class ParsianBankAdapter implements BankAdapterInterface
         // Try sandbox first, then fallback to production
         $urls = [
             'sandbox' => config('banks.parsian.oauth_sandbox_token_url', 'https://sandbox.parsian-bank.ir/oauth2/token'),
-            'production' => config('banks.parsian.oauth_token_url', 'https://oauth2.parsian-bank.ir/oauth/token'),
+            'production' => config('banks.parsian.oauth_token_url', 'https://oauth2.parsian-bank.ir/oauth2/token'),
         ];
 
         $authUrl = $this->shouldUseSandbox() ? $urls['sandbox'] : $urls['production'];
@@ -191,6 +191,7 @@ class ParsianBankAdapter implements BankAdapterInterface
     {
         $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? throw new \Exception('Account number is required');
 
+        // Try with URL encoding first
         $url = $this->apiEndpoint . '/' . rawurlencode(self::SERVICE_GET_ACCOUNT_BALANCE);
 
         Log::info('Fetching balance from Parsian Bank', [
@@ -218,6 +219,35 @@ class ParsianBankAdapter implements BankAdapterInterface
             throw new \Exception('Connection timeout or error when fetching balance from Parsian Bank: ' . $e->getMessage());
         }
 
+        // If 404, try without URL encoding
+        if ($response->status() === 404) {
+            $urlWithoutEncoding = $this->apiEndpoint . '/' . self::SERVICE_GET_ACCOUNT_BALANCE;
+
+            Log::info('Trying without URL encoding for Parsian Bank service', [
+                'accountNumber' => $accountNumber,
+                'url' => $urlWithoutEncoding,
+            ]);
+
+            try {
+                $response = Http::timeout(30)
+                    ->withHeaders([
+                        'Authorization' => 'Bearer ' . $this->token,
+                        'Content-Type' => 'application/json',
+                    ])->post($urlWithoutEncoding, [
+                        'accountNumber' => $accountNumber,
+                    ]);
+
+                // Update URL for logging
+                $url = $urlWithoutEncoding;
+            } catch (\Illuminate\Http\Client\ConnectionException $e) {
+                Log::error('Connection timeout when trying without encoding', [
+                    'accountNumber' => $accountNumber,
+                    'url' => $urlWithoutEncoding,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         if (! $response->successful()) {
             $statusCode = $response->status();
             $responseBody = $response->body();
@@ -228,6 +258,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'status' => $statusCode,
                 'response' => $responseBody,
                 'data' => $responseData,
+                'url' => $url,
             ]);
 
             // Handle authentication errors

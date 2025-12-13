@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Log;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -47,9 +48,9 @@ class AppServiceProvider extends ServiceProvider
             }
         } catch (QueryException $e) {
             // Log the error but don't fail the application boot
-            \Log::warning('Database not ready during boot: '.$e->getMessage());
+            Log::warning('Database not ready during boot: '.$e->getMessage());
         } catch (\Exception $e) {
-            \Log::warning('Error during AppServiceProvider boot: '.$e->getMessage());
+            Log::warning('Error during AppServiceProvider boot: '.$e->getMessage());
         }
     }
 }

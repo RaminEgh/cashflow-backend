@@ -37,12 +37,13 @@ class DepositFetchService
                 }
                 $deposits = $response->json();
                 foreach ($deposits as $data) {
-                    $bankName = trim(str_replace('بانک', '', $data['BankTitle']));
+                    $bankName = $this->cleanBankTitle($data['BankTitle']);
+                    $enName = $this->mapBankNameToEnglish($bankName);
                     $bank = Bank::whereName($bankName)->first();
                     if (! $bank) {
                         $bank = Bank::Create([
                             'name' => $bankName,
-                            'en_name' => Helper::persianToLatin($bankName),
+                            'en_name' => $enName,
                             'created_by' => 1,
                             'updated_by' => 1,
                             'logo' => null,
@@ -70,5 +71,104 @@ class DepositFetchService
                 continue;
             }
         }
+    }
+
+    /**
+     * Clean bank title by removing special characters, numbers, and "بانک" prefix.
+     */
+    private function cleanBankTitle(string $bankTitle): string
+    {
+        // Remove "بانک" prefix
+        $cleaned = trim(str_replace('بانک', '', $bankTitle));
+
+        // Remove special characters and numbers: * ! @ 1 2 3 4 5 6 7 8 9 0
+        $cleaned = preg_replace('/[*!@0-9]/u', '', $cleaned);
+
+        return trim($cleaned);
+    }
+
+    /**
+     * Map Persian bank name to English name.
+     */
+    private function mapBankNameToEnglish(string $persianName): string
+    {
+        $mapping = [
+            'ملی' => 'melli',
+            'ملّی' => 'melli',
+            'سپه' => 'sepah',
+            'صنعت و معدن' => 'sanat va madan',
+            'صنعت‌و‌معدن' => 'sanat va madan',
+            'صنعت معدن' => 'sanat va madan',
+            'صنعت‌معدن' => 'sanat va madan',
+            'کشاورزی' => 'keshavarzi',
+            'مسکن' => 'maskan',
+            'توسعه صادرات' => 'tosee saderat',
+            'توسعه‌صادرات' => 'tosee saderat',
+            'توسعه تعاون' => 'tosee taavon',
+            'توسعه‌تعاون' => 'tosee taavon',
+            'پست بانک' => 'post bank',
+            'پست‌بانک' => 'post bank',
+            'پست' => 'post bank',
+            'صادرات' => 'saderat',
+            'ملت' => 'mellat',
+            'تجارت' => 'tejarat',
+            'رفاه' => 'refah',
+            'پارسیان' => 'parsian',
+            'سامان' => 'saman',
+            'سینا' => 'sina',
+            'خاورمیانه' => 'khavarmiane',
+            'شهر' => 'shahr',
+            'دی' => 'day',
+            'گردشگری' => 'gardeshgari',
+            'ایران زمین' => 'iran zamin',
+            'ایران‌زمین' => 'iran zamin',
+            'قوامین' => 'ghavamin',
+            'پاسارگاد' => 'pasargad',
+            'اقتصاد نوین' => 'eghtesad novin',
+            'اقتصاد‌نوین' => 'eghtesad novin',
+            'کارآفرین' => 'karafarin',
+            'کار آفرین' => 'karafarin',
+            'کار‌آفرین' => 'karafarin',
+            'آینده' => 'ayandeh',
+            'حکمت ایرانیان' => 'hekmat iranian',
+            'حکمت‌ایرانیان' => 'hekmat iranian',
+            'انصار' => 'ansar',
+            'سرمایه' => 'sarmayeh',
+            'مشترک ایران و ونزوئلا' => 'moshterk iran va vanzoola',
+            'مشترک‌ایران‌و‌ونزوئلا' => 'moshterk iran va vanzoola',
+            'ایران و ونزوئلا' => 'moshterk iran va vanzoola',
+            'ایران‌و‌ونزوئلا' => 'moshterk iran va vanzoola',
+            'ایران ونزوئلا' => 'moshterk iran va vanzoola',
+            'ایران‌ونزوئلا' => 'moshterk iran va vanzoola',
+            'مشترک ایران-ونزوئلا' => 'moshterk iran va vanzoola',
+            'مشترک‌ایران-ونزوئلا' => 'moshterk iran va vanzoola',
+            'مشترک ایران_ونزوئلا' => 'moshterk iran va vanzoola',
+            'مشترک‌ایران_ونزوئلا' => 'moshterk iran va vanzoola',
+
+            'قرض الحسنه مهر' => 'qarzolhasaneh mehr iran',
+            'قرض‌الحسنه‌مهر' => 'qarzolhasaneh mehr iran',
+            'مهر' => 'qarzolhasaneh mehr iran',
+            'قرض الحسنه مهر ایران' => 'qarzolhasaneh mehr iran',
+            'قرض‌الحسنه مهر ایران' => 'qarzolhasaneh mehr iran',
+            'قرض‌الحسنه‌مهر‌ایران' => 'qarzolhasaneh mehr iran',
+            'قرض الحسنه رسالت' => 'qarzolhasaneh resalat',
+            'قرض‌الحسنه رسالت' => 'qarzolhasaneh resalat',
+            'قرض‌الحسنه‌رسالت' => 'qarzolhasaneh resalat',
+            'رسالت' => 'qarzolhasaneh resalat',
+
+            'مهر اقتصاد' => 'mehre eghtesad',
+            'مهر‌اقتصاد' => 'mehre eghtesad',
+            'بلو سامان' => 'blu',
+            'بلو‌سامان' => 'blu',
+            'بلو' => 'blu',
+            'بلوبانک' => 'blu',
+            'بلو بانک' => 'blu',
+            
+        ];
+
+        // Normalize the Persian name (remove extra spaces)
+        $normalized = preg_replace('/\s+/u', ' ', trim($persianName));
+
+        return $mapping[$normalized] ?? Helper::persianToLatin($normalized);
     }
 }

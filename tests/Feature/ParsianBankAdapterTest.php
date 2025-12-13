@@ -68,7 +68,7 @@ it('throws exception when account number is not provided', function () {
     $adapter = new ParsianBankAdapter;
     $adapter->setAccount([]);
 
-    expect(fn() => $adapter->getBalance())->toThrow('Account number is required');
+    expect(fn () => $adapter->getBalance())->toThrow('Account number is required');
 });
 
 it('throws exception when API returns error', function () {
@@ -81,7 +81,7 @@ it('throws exception when API returns error', function () {
     $adapter = new ParsianBankAdapter;
     $adapter->setAccount(['accountNumber' => '85000005464007']);
 
-    expect(fn() => $adapter->getBalance())->toThrow('Failed to fetch balance from Parsian Bank');
+    expect(fn () => $adapter->getBalance())->toThrow('Failed to fetch balance from Parsian Bank (HTTP 400): Invalid account number');
 });
 
 it('throws exception when account is not found', function () {
@@ -94,7 +94,7 @@ it('throws exception when account is not found', function () {
     $adapter = new ParsianBankAdapter;
     $adapter->setAccount(['accountNumber' => '85000005464007']);
 
-    expect(fn() => $adapter->getAccountBalance())->toThrow('Account not found: 85000005464007');
+    expect(fn () => $adapter->getAccountBalance())->toThrow('Account not found: 85000005464007');
 });
 
 it('handles missing optional fields in getAccountBalance', function () {
@@ -148,7 +148,7 @@ it('throws exception when API returns 500 error', function () {
     $adapter = new ParsianBankAdapter;
     $adapter->setAccount(['accountNumber' => '85000005464007']);
 
-    expect(fn() => $adapter->getBalance())->toThrow('Failed to fetch balance from Parsian Bank');
+    expect(fn () => $adapter->getBalance())->toThrow('Failed to fetch balance from Parsian Bank (HTTP 500): Unknown error');
 });
 
 it('throws exception when API returns 404 error', function () {
@@ -161,7 +161,46 @@ it('throws exception when API returns 404 error', function () {
     $adapter = new ParsianBankAdapter;
     $adapter->setAccount(['accountNumber' => '85000005464007']);
 
-    expect(fn() => $adapter->getBalance())->toThrow('Failed to fetch balance from Parsian Bank');
+    expect(fn () => $adapter->getBalance())->toThrow('Failed to fetch balance from Parsian Bank (HTTP 404): Method not found');
+});
+
+it('throws exception when account is not found in getBalance', function () {
+    Http::fake([
+        'sandbox.parsian-bank.ir/*' => Http::response([
+            'exception' => 'ChAccountNotFoundException',
+        ], 200),
+    ]);
+
+    $adapter = new ParsianBankAdapter;
+    $adapter->setAccount(['accountNumber' => '85000005464007']);
+
+    expect(fn () => $adapter->getBalance())->toThrow('Account not found: 85000005464007');
+});
+
+it('throws exception when authentication fails with 401', function () {
+    Http::fake([
+        'sandbox.parsian-bank.ir/*' => Http::response([
+            'error' => 'Unauthorized',
+        ], 401),
+    ]);
+
+    $adapter = new ParsianBankAdapter;
+    $adapter->setAccount(['accountNumber' => '85000005464007']);
+
+    expect(fn () => $adapter->getBalance())->toThrow('Authentication failed when fetching balance from Parsian Bank (HTTP 401)');
+});
+
+it('throws exception when authentication fails with 403', function () {
+    Http::fake([
+        'sandbox.parsian-bank.ir/*' => Http::response([
+            'error' => 'Forbidden',
+        ], 403),
+    ]);
+
+    $adapter = new ParsianBankAdapter;
+    $adapter->setAccount(['accountNumber' => '85000005464007']);
+
+    expect(fn () => $adapter->getBalance())->toThrow('Authentication failed when fetching balance from Parsian Bank (HTTP 403)');
 });
 
 it('successfully authenticates with Basic Auth and gets access token', function () {

@@ -14,6 +14,8 @@ class ParsianBankAdapter implements BankAdapterInterface
 
     protected string $token;
 
+    protected const SERVICE_GET_ACCOUNT_BALANCE = 'Get accont balance';
+
     public function setAccount(array $credentials): BankAdapterInterface
     {
         $this->credentials = $credentials;
@@ -56,8 +58,8 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         // Try sandbox first, then fallback to production
         $urls = [
-            'sandbox' => 'https://sandbox.parsian-bank.ir/oauth2/token',
-            'production' => 'https://openapi.parsian-bank.ir/oauth2/token',
+            'sandbox' => config('banks.parsian.oauth_sandbox_token_url', 'https://sandbox.parsian-bank.ir/oauth2/token'),
+            'production' => config('banks.parsian.oauth_token_url', 'https://oauth2.parsian-bank.ir/oauth/token'),
         ];
 
         $authUrl = $this->shouldUseSandbox() ? $urls['sandbox'] : $urls['production'];
@@ -78,10 +80,28 @@ class ParsianBankAdapter implements BankAdapterInterface
                 return $response->json()['access_token'];
             }
 
+            $statusCode = $response->status();
+            $responseBody = $response->body();
+            $responseData = $response->json();
+
             Log::warning('Parsian Bank authentication failed with primary URL', [
                 'url' => $authUrl,
-                'status' => $response->status(),
-                'response' => $response->body(),
+                'status' => $statusCode,
+                'response' => $responseBody,
+                'data' => $responseData,
+            ]);
+
+            // If we got a response but no token, check for specific error messages
+            if (isset($responseData['error'])) {
+                $lastException = new \Exception("Parsian Bank authentication failed (HTTP {$statusCode}): {$responseData['error']}");
+            } else {
+                $lastException = new \Exception("Parsian Bank authentication failed (HTTP {$statusCode}): Invalid response format");
+            }
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            $lastException = $e;
+            Log::warning('Parsian Bank primary URL connection failed', [
+                'url' => $authUrl,
+                'error' => $e->getMessage(),
             ]);
         } catch (\Exception $e) {
             $lastException = $e;
@@ -112,14 +132,31 @@ class ParsianBankAdapter implements BankAdapterInterface
                 return $response->json()['access_token'];
             }
 
+            $statusCode = $response->status();
+            $responseBody = $response->body();
+            $responseData = $response->json();
+
             Log::error('Failed to authenticate with Parsian Bank (both URLs)', [
                 'primary_url' => $authUrl,
                 'fallback_url' => $fallbackUrl,
-                'status' => $response->status(),
-                'response' => $response->body(),
+                'status' => $statusCode,
+                'response' => $responseBody,
+                'data' => $responseData,
+                'primary_error' => $lastException?->getMessage(),
             ]);
 
-            throw new \Exception('Failed to authenticate with Parsian Bank');
+            // Include error message from response if available
+            $errorMessage = $responseData['error'] ?? $responseData['message'] ?? 'Unknown error';
+            throw new \Exception("Failed to authenticate with Parsian Bank (HTTP {$statusCode}): {$errorMessage}");
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::error('Failed to authenticate with Parsian Bank - connection error', [
+                'primary_url' => $authUrl,
+                'fallback_url' => $fallbackUrl,
+                'primary_error' => $lastException?->getMessage(),
+                'fallback_error' => $e->getMessage(),
+            ]);
+
+            throw new \Exception('Failed to authenticate with Parsian Bank - connection error: ' . $e->getMessage());
         } catch (\Exception $e) {
             Log::error('Failed to authenticate with Parsian Bank', [
                 'primary_url' => $authUrl,
@@ -127,6 +164,11 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'primary_error' => $lastException?->getMessage(),
                 'fallback_error' => $e->getMessage(),
             ]);
+
+            // If the exception already has a detailed message, use it; otherwise create a new one
+            if (str_contains($e->getMessage(), 'Failed to authenticate')) {
+                throw $e;
+            }
 
             throw new \Exception('Failed to authenticate with Parsian Bank: ' . $e->getMessage());
         }
@@ -149,26 +191,64 @@ class ParsianBankAdapter implements BankAdapterInterface
     {
         $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? throw new \Exception('Account number is required');
 
-        $url = $this->apiEndpoint . '/getAccountBalance';
+        $url = $this->apiEndpoint . '/' . rawurlencode(self::SERVICE_GET_ACCOUNT_BALANCE);
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->token,
-            'Content-Type' => 'application/json',
-        ])->post($url, [
-            'accountNumber' => $accountNumber,
-        ]);
-
-        if (! $response->successful()) {
-            Log::error('Failed to fetch balance from Parsian Bank', [
+        try {
+            $response = Http::timeout(30)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->token,
+                    'Content-Type' => 'application/json',
+                ])->post($url, [
+                    'accountNumber' => $accountNumber,
+                ]);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::error('Connection timeout or error when fetching balance from Parsian Bank', [
                 'accountNumber' => $accountNumber,
-                'status' => $response->status(),
-                'response' => $response->body(),
+                'url' => $url,
+                'error' => $e->getMessage(),
             ]);
 
-            throw new \Exception('Failed to fetch balance from Parsian Bank');
+            throw new \Exception('Connection timeout or error when fetching balance from Parsian Bank: ' . $e->getMessage());
+        }
+
+        if (! $response->successful()) {
+            $statusCode = $response->status();
+            $responseBody = $response->body();
+            $responseData = $response->json();
+
+            Log::error('Failed to fetch balance from Parsian Bank', [
+                'accountNumber' => $accountNumber,
+                'status' => $statusCode,
+                'response' => $responseBody,
+                'data' => $responseData,
+            ]);
+
+            // Handle authentication errors
+            if ($statusCode === 401 || $statusCode === 403) {
+                throw new \Exception("Authentication failed when fetching balance from Parsian Bank (HTTP {$statusCode}). Token may be expired or invalid.");
+            }
+
+            // Handle account not found errors
+            if (isset($responseData['exception']) || (isset($responseData['error']) && str_contains(strtolower($responseData['error']), 'account not found'))) {
+                throw new \Exception("Account not found: {$accountNumber}");
+            }
+
+            // Include error message from response if available
+            $errorMessage = $responseData['error'] ?? $responseData['message'] ?? 'Unknown error';
+            throw new \Exception("Failed to fetch balance from Parsian Bank (HTTP {$statusCode}): {$errorMessage}");
         }
 
         $data = $response->json();
+
+        // Check for ChAccountNotFoundException or similar
+        if (isset($data['exception']) || (isset($data['error']) && str_contains(strtolower($data['error']), 'account not found'))) {
+            Log::error('Parsian Bank account not found', [
+                'accountNumber' => $accountNumber,
+                'data' => $data,
+            ]);
+
+            throw new \Exception("Account not found: {$accountNumber}");
+        }
 
         if (isset($data['error']) || ! isset($data['balance'])) {
             Log::error('Parsian Bank returned an error', [
@@ -176,7 +256,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'data' => $data,
             ]);
 
-            throw new \Exception($data['error'] ?? 'Unknown error from Parsian Bank');
+            throw new \Exception($data['error'] ?? $data['message'] ?? 'Unknown error from Parsian Bank');
         }
 
         return (float) $data['balance'];
@@ -193,7 +273,7 @@ class ParsianBankAdapter implements BankAdapterInterface
     {
         $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? throw new \Exception('Account number is required');
 
-        $url = $this->apiEndpoint . '/getAccountBalance';
+        $url = $this->apiEndpoint . '/' . rawurlencode(self::SERVICE_GET_ACCOUNT_BALANCE);
 
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $this->token,

@@ -39,7 +39,8 @@ class DepositFetchService
                 foreach ($deposits as $data) {
                     $bankName = $this->cleanBankTitle($data['BankTitle']);
                     $enName = $this->mapBankNameToEnglish($bankName);
-                    $bank = Bank::whereName($bankName)->first();
+                    // Search by en_name to find the same bank even if name is different
+                    $bank = Bank::where('en_name', $enName)->first();
                     if (! $bank) {
                         $bank = Bank::Create([
                             'name' => $bankName,
@@ -162,7 +163,6 @@ class DepositFetchService
             'رسالت' => 'qarzolhasaneh resalat',
             'موسسه مالی و اعتباری کوثر' => 'moasse mali va atabari kousar',
             'موسسه‌مالی‌و‌اعتباری‌کوثر' => 'moasse mali va atabari kousar',
-            'کوثر' => 'moasse mali va atabari kousar',
             'کوثر' => 'moasse mali va atabari kousar',
             'مهر اقتصاد' => 'mehre eghtesad',
             'مهر‌اقتصاد' => 'mehre eghtesad',

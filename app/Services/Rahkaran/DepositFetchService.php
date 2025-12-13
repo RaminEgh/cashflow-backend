@@ -113,6 +113,8 @@ class DepositFetchService
             'ملت' => 'mellat',
             'تجارت' => 'tejarat',
             'رفاه' => 'refah',
+            'رفاه کارگران' => 'refah',
+            'رفاه‌کارگران' => 'refah',
             'پارسیان' => 'parsian',
             'سامان' => 'saman',
             'سینا' => 'sina',
@@ -126,6 +128,7 @@ class DepositFetchService
             'پاسارگاد' => 'pasargad',
             'اقتصاد نوین' => 'eghtesad novin',
             'اقتصاد‌نوین' => 'eghtesad novin',
+            'اقتصادنوین' => 'eghtesad novin',
             'کارآفرین' => 'karafarin',
             'کار آفرین' => 'karafarin',
             'کار‌آفرین' => 'karafarin',
@@ -149,13 +152,18 @@ class DepositFetchService
             'قرض‌الحسنه‌مهر' => 'qarzolhasaneh mehr iran',
             'مهر' => 'qarzolhasaneh mehr iran',
             'قرض الحسنه مهر ایران' => 'qarzolhasaneh mehr iran',
+            'مهر ایران' => 'qarzolhasaneh mehr iran',
+            'مهر‌ایران' => 'qarzolhasaneh mehr iran',
             'قرض‌الحسنه مهر ایران' => 'qarzolhasaneh mehr iran',
             'قرض‌الحسنه‌مهر‌ایران' => 'qarzolhasaneh mehr iran',
             'قرض الحسنه رسالت' => 'qarzolhasaneh resalat',
             'قرض‌الحسنه رسالت' => 'qarzolhasaneh resalat',
             'قرض‌الحسنه‌رسالت' => 'qarzolhasaneh resalat',
             'رسالت' => 'qarzolhasaneh resalat',
-
+            'موسسه مالی و اعتباری کوثر' => 'moasse mali va atabari kousar',
+            'موسسه‌مالی‌و‌اعتباری‌کوثر' => 'moasse mali va atabari kousar',
+            'کوثر' => 'moasse mali va atabari kousar',
+            'کوثر' => 'moasse mali va atabari kousar',
             'مهر اقتصاد' => 'mehre eghtesad',
             'مهر‌اقتصاد' => 'mehre eghtesad',
             'بلو سامان' => 'blu',
@@ -163,12 +171,47 @@ class DepositFetchService
             'بلو' => 'blu',
             'بلوبانک' => 'blu',
             'بلو بانک' => 'blu',
-            
+            'بلو‌بانک' => 'blu',
         ];
 
         // Normalize the Persian name (remove extra spaces)
         $normalized = preg_replace('/\s+/u', ' ', trim($persianName));
 
-        return $mapping[$normalized] ?? Helper::persianToLatin($normalized);
+        // First, try direct mapping
+        if (isset($mapping[$normalized])) {
+            return $mapping[$normalized];
+        }
+
+        // If not found, try to extract bank name from the string
+        $extractedBankName = $this->extractBankNameFromString($normalized, array_keys($mapping));
+        if ($extractedBankName && isset($mapping[$extractedBankName])) {
+            return $mapping[$extractedBankName];
+        }
+
+        return Helper::persianToLatin($normalized);
+    }
+
+    /**
+     * Extract bank name from a string if it contains one of the mapping keys.
+     */
+    private function extractBankNameFromString(string $text, array $bankNames): ?string
+    {
+        // Sort by length (longest first) to match longer names first
+        usort($bankNames, function ($a, $b) {
+            return mb_strlen($b) <=> mb_strlen($a);
+        });
+
+        foreach ($bankNames as $bankName) {
+            // Remove spaces and half-spaces for comparison
+            $normalizedText = preg_replace('/[\s\u200C]+/u', '', $text);
+            $normalizedBankName = preg_replace('/[\s\u200C]+/u', '', $bankName);
+
+            // Check if bank name exists in the text
+            if (mb_strpos($normalizedText, $normalizedBankName) !== false) {
+                return $bankName;
+            }
+        }
+
+        return null;
     }
 }

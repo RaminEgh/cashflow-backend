@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Jobs\FetchBankAccountBalance;
+use App\Models\Bank;
 use App\Models\Deposit;
 use App\Models\Organ;
 use Illuminate\Console\Command;
@@ -16,6 +17,7 @@ class UpdateBalancesCommand extends Command
      */
     protected $signature = 'app:update-balances
                             {--organ= : Update balances for all deposits of a specific organ (organ ID)}
+                            {--bank= : Update balances for all deposits of a specific bank (bank slug or ID)}
                             {--all-organs : Update balances for all organs, grouped by organ}';
 
     /**
@@ -31,15 +33,25 @@ class UpdateBalancesCommand extends Command
     public function handle(): int
     {
         $organId = $this->option('organ');
+        $bankIdentifier = $this->option('bank');
         $allOrgans = $this->option('all-organs');
 
+        // Combination: organ + bank
+        if ($organId && $bankIdentifier) {
+            return $this->updateForOrganAndBank((int) $organId, $bankIdentifier);
+        }
+
+        // Single filters
         if ($allOrgans) {
             return $this->updateForAllOrgans();
         } elseif ($organId) {
             return $this->updateForOrgan((int) $organId);
-        } else {
-            return $this->updateForAllDeposits();
+        } elseif ($bankIdentifier) {
+            return $this->updateForBank($bankIdentifier);
         }
+
+        // Default: all deposits
+        return $this->updateForAllDeposits();
     }
 
     /**
@@ -137,6 +149,86 @@ class UpdateBalancesCommand extends Command
         }
 
         $this->info("All balance update jobs have been dispatched successfully! ({$organs->count()} organs, {$totalDeposits} deposits)");
+
+        return 0;
+    }
+
+    /**
+     * Update balances for all deposits of a specific bank.
+     */
+    private function updateForBank(string $bankIdentifier): int
+    {
+        // Try to find bank by slug first, then by ID
+        $bank = Bank::where('slug', $bankIdentifier)->first() ?? Bank::find($bankIdentifier);
+
+        if (! $bank) {
+            $this->error("Bank with identifier '{$bankIdentifier}' not found.");
+            $this->info('Available banks:');
+            Bank::all()->each(fn($b) => $this->line("  - {$b->name} (slug: {$b->slug}, ID: {$b->id})"));
+
+            return 1;
+        }
+
+        $this->info("Finding bank accounts for bank: {$bank->name} (Slug: {$bank->slug})...");
+        $deposits = $bank->deposits;
+
+        if ($deposits->isEmpty()) {
+            $this->warn("No deposits found for bank: {$bank->name}");
+
+            return 1;
+        }
+
+        foreach ($deposits as $deposit) {
+            FetchBankAccountBalance::dispatch($deposit)
+                ->tags(['balance-update', 'scheduled', "bank:{$bank->slug}"]);
+            $this->line(" - Dispatched job for account: {$deposit->id} (Deposit: {$deposit->number})");
+        }
+
+        $this->info("Balance update jobs dispatched successfully for bank: {$bank->name} ({$deposits->count()} deposits)");
+
+        return 0;
+    }
+
+    /**
+     * Update balances for all deposits of a specific organ and bank combination.
+     */
+    private function updateForOrganAndBank(int $organId, string $bankIdentifier): int
+    {
+        $organ = Organ::find($organId);
+
+        if (! $organ) {
+            $this->error("Organ with ID {$organId} not found.");
+
+            return 1;
+        }
+
+        // Try to find bank by slug first, then by ID
+        $bank = Bank::where('slug', $bankIdentifier)->first() ?? Bank::find($bankIdentifier);
+
+        if (! $bank) {
+            $this->error("Bank with identifier '{$bankIdentifier}' not found.");
+
+            return 1;
+        }
+
+        $this->info("Finding bank accounts for organ: {$organ->name} and bank: {$bank->name}...");
+        $deposits = Deposit::where('organ_id', $organId)
+            ->where('bank_id', $bank->id)
+            ->get();
+
+        if ($deposits->isEmpty()) {
+            $this->warn("No deposits found for organ: {$organ->name} and bank: {$bank->name}");
+
+            return 1;
+        }
+
+        foreach ($deposits as $deposit) {
+            FetchBankAccountBalance::dispatch($deposit)
+                ->tags(['balance-update', 'scheduled', "organ:{$organ->slug}", "bank:{$bank->slug}"]);
+            $this->line(" - Dispatched job for account: {$deposit->id} (Deposit: {$deposit->number})");
+        }
+
+        $this->info("Balance update jobs dispatched successfully for organ: {$organ->name} and bank: {$bank->name} ({$deposits->count()} deposits)");
 
         return 0;
     }

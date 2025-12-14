@@ -15,7 +15,7 @@ class ParsianBankAdapter implements BankAdapterInterface
 
     protected string $token;
 
-    protected const SERVICE_GET_ACCOUNT_BALANCE = 'Get accont balance';
+    protected const SERVICE_GET_ACCOUNT_BALANCE = 'getAccountBalance';
 
     public function setAccount(array $credentials): BankAdapterInterface
     {
@@ -221,8 +221,8 @@ class ParsianBankAdapter implements BankAdapterInterface
     {
         $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? throw new \Exception('Account number is required');
 
-        // Try with URL encoding first
-        $url = $this->apiEndpoint . '/' . rawurlencode(self::SERVICE_GET_ACCOUNT_BALANCE);
+        // Service name is camelCase, no URL encoding needed
+        $url = $this->apiEndpoint . '/' . self::SERVICE_GET_ACCOUNT_BALANCE;
 
         Log::info('Fetching balance from Parsian Bank', [
             'accountNumber' => $accountNumber,
@@ -247,35 +247,6 @@ class ParsianBankAdapter implements BankAdapterInterface
             ]);
 
             throw new \Exception('Connection timeout or error when fetching balance from Parsian Bank: ' . $e->getMessage());
-        }
-
-        // If 404, try without URL encoding
-        if ($response->status() === 404) {
-            $urlWithoutEncoding = $this->apiEndpoint . '/' . self::SERVICE_GET_ACCOUNT_BALANCE;
-
-            Log::info('Trying without URL encoding for Parsian Bank service', [
-                'accountNumber' => $accountNumber,
-                'url' => $urlWithoutEncoding,
-            ]);
-
-            try {
-                $response = Http::timeout(30)
-                    ->withHeaders([
-                        'Authorization' => 'Bearer ' . $this->token,
-                        'Content-Type' => 'application/json',
-                    ])->post($urlWithoutEncoding, [
-                        'accountNumber' => $accountNumber,
-                    ]);
-
-                // Update URL for logging
-                $url = $urlWithoutEncoding;
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                Log::error('Connection timeout when trying without encoding', [
-                    'accountNumber' => $accountNumber,
-                    'url' => $urlWithoutEncoding,
-                    'error' => $e->getMessage(),
-                ]);
-            }
         }
 
         if (! $response->successful()) {
@@ -359,7 +330,7 @@ class ParsianBankAdapter implements BankAdapterInterface
     {
         $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? throw new \Exception('Account number is required');
 
-        $url = $this->apiEndpoint . '/' . rawurlencode(self::SERVICE_GET_ACCOUNT_BALANCE);
+        $url = $this->apiEndpoint . '/' . self::SERVICE_GET_ACCOUNT_BALANCE;
 
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $this->token,

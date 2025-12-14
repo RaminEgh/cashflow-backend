@@ -8,7 +8,6 @@ return [
         'oauth_sandbox_token_url' => env('PARSIAN_OAUTH_SANDBOX_TOKEN_URL', 'https://sandbox.parsian-bank.ir/oauth2/token'),
         'client_id' => env('PARSIAN_CLIENT_ID'),
         'client_secret' => env('PARSIAN_CLIENT_SECRET'),
-        'token' => env('PARSIAN_API_TOKEN'),
         'use_sandbox' => env('PARSIAN_USE_SANDBOX', true),
     ],
     'mellat' => [

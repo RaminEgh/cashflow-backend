@@ -3,6 +3,7 @@
 namespace App\Services\Banking\Adapters;
 
 use App\Services\Banking\BankAdapterInterface;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -20,7 +21,7 @@ class ParsianBankAdapter implements BankAdapterInterface
     {
         $this->credentials = $credentials;
         $this->apiEndpoint = $this->shouldUseSandbox() ? $this->getSandboxUrl() : $this->getApiUrl();
-        $this->token = $this->getToken();
+        $this->token = $this->getAccessToken();
 
         return $this;
     }
@@ -35,18 +36,6 @@ class ParsianBankAdapter implements BankAdapterInterface
         return config('banks.parsian.api_url');
     }
 
-    protected function getToken(): string
-    {
-        // If token is explicitly set in config, use it
-        $token = config('banks.parsian.token');
-        if ($token) {
-            return $token;
-        }
-
-        // Otherwise, get token using OAuth2 client credentials
-        return $this->getAccessToken();
-    }
-
     protected function getAccessToken(): string
     {
         $clientId = config('banks.parsian.client_id');
@@ -54,6 +43,21 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         if (! $clientId || ! $clientSecret) {
             throw new \Exception('Parsian Bank client credentials not configured');
+        }
+
+        // Try to get token from cache first
+        $environment = $this->shouldUseSandbox() ? 'sandbox' : 'production';
+        $cacheKey = "parsian_bank_token_{$environment}_{$clientId}";
+
+        $cachedToken = Cache::get($cacheKey);
+        if ($cachedToken) {
+            Log::debug('Using cached Parsian Bank token', [
+                'environment' => $environment,
+                'cache_key' => $cacheKey,
+                'token_preview' => substr($cachedToken, 0, 20) . '...',
+            ]);
+
+            return $cachedToken;
         }
 
         // Try sandbox first, then fallback to production
@@ -77,7 +81,22 @@ class ParsianBankAdapter implements BankAdapterInterface
                 ]);
 
             if ($response->successful() && isset($response->json()['access_token'])) {
-                return $response->json()['access_token'];
+                $tokenData = $response->json();
+                $token = $tokenData['access_token'];
+                $expiresIn = $tokenData['expires_in'] ?? 3600;
+
+                // Cache token for slightly less than its expiration time to be safe
+                $cacheDuration = max(1, $expiresIn - 60); // 60 seconds buffer
+
+                Cache::put($cacheKey, $token, $cacheDuration);
+
+                Log::info('Successfully obtained and cached Parsian Bank token', [
+                    'environment' => $environment,
+                    'expires_in' => $expiresIn,
+                    'cache_duration' => $cacheDuration,
+                ]);
+
+                return $token;
             }
 
             $statusCode = $response->status();
@@ -125,11 +144,22 @@ class ParsianBankAdapter implements BankAdapterInterface
                 ]);
 
             if ($response->successful() && isset($response->json()['access_token'])) {
-                Log::info('Parsian Bank authentication succeeded with fallback URL', [
+                $tokenData = $response->json();
+                $token = $tokenData['access_token'];
+                $expiresIn = $tokenData['expires_in'] ?? 3600;
+
+                // Cache token for slightly less than its expiration time to be safe
+                $cacheDuration = max(1, $expiresIn - 60); // 60 seconds buffer
+
+                Cache::put($cacheKey, $token, $cacheDuration);
+
+                Log::info('Parsian Bank authentication succeeded with fallback URL and cached', [
                     'fallback_url' => $fallbackUrl,
+                    'expires_in' => $expiresIn,
+                    'cache_duration' => $cacheDuration,
                 ]);
 
-                return $response->json()['access_token'];
+                return $token;
             }
 
             $statusCode = $response->status();

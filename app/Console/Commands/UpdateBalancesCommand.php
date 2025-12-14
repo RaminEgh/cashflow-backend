@@ -233,3 +233,4 @@ class UpdateBalancesCommand extends Command
         return 0;
     }
 }
+

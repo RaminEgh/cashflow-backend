@@ -403,22 +403,3 @@ class ParsianBankAdapter implements BankAdapterInterface
         ];
     }
 }
-production.DEBUG: Using cached Parsian Bank token {"environment":"production","cache_key":"parsian_bank_token_production_33710540474830709","token_preview":"eyJhbGciOiJSUzI1NiIs..."}
-[2025-12-14 10:34:37] production.INFO: Fetching balance from Parsian Bank {"accountNumber":"20101327972600","url":"https://openapi.parsian-bank.ir/channelServices/1.0//Get%20accont%20balance","apiEndpoint":"https://openapi.parsian-bank.ir/channelServices/1.0/","serviceName":"Get accont balance"}
-[2025-12-14 10:34:37] production.INFO: Starting to fetch balance for deposit ID: 20101083894603
-[2025-12-14 10:34:37] production.INFO: BankAdapterFactory...
-[2025-12-14 10:34:37] production.DEBUG: Using cached Parsian Bank token {"environment":"production","cache_key":"parsian_bank_token_production_33710540474830709","token_preview":"eyJhbGciOiJSUzI1NiIs..."}
-[2025-12-14 10:34:37] production.INFO: Fetching balance from Parsian Bank {"accountNumber":"20101083894603","url":"https://openapi.parsian-bank.ir/channelServices/1.0//Get%20accont%20balance","apiEndpoint":"https://openapi.parsian-bank.ir/channelServices/1.0/","serviceName":"Get accont balance"}
-[2025-12-14 10:34:37] production.INFO: Trying without URL encoding for Parsian Bank service {"accountNumber":"20101327972600","url":"https://openapi.parsian-bank.ir/channelServices/1.0//Get accont balance"}
-[2025-12-14 10:34:37] production.INFO: Trying without URL encoding for Parsian Bank service {"accountNumber":"20101083894603","url":"https://openapi.parsian-bank.ir/channelServices/1.0//Get accont balance"}
-[2025-12-14 10:34:37] production.ERROR: Failed to fetch balance from Parsian Bank {"accountNumber":"20101083894603","status":404,"response":"<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>404</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>No matching resource found for given API Request</am:description></am:fault>","data":null,"url":"https://openapi.parsian-bank.ir/channelServices/1.0//Get accont balance"}
-[2025-12-14 10:34:37] production.ERROR: Failed to fetch balance for deposit ID 56: Failed to fetch balance from Parsian Bank (HTTP 404): Unknown error
-[2025-12-14 10:34:37] production.ERROR: Failed to fetch balance from Parsian Bank {"accountNumber":"20101327972600","status":404,"response":"<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>404</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>No matching resource found for given API Request</am:description></am:fault>","data":null,"url":"https://openapi.parsian-bank.ir/channelServices/1.0//Get accont balance"}
-[2025-12-14 10:34:37] production.ERROR: Failed to fetch balance for deposit ID 55: Failed to fetch balance from Parsian Bank (HTTP 404): Unknown error
-[2025-12-14 10:34:37] production.INFO: Starting to fetch balance for deposit ID: 30101730876601
-[2025-12-14 10:34:37] production.INFO: BankAdapterFactory...
-[2025-12-14 10:34:37] production.DEBUG: Using cached Parsian Bank token {"environment":"production","cache_key":"parsian_bank_token_production_33710540474830709","token_preview":"eyJhbGciOiJSUzI1NiIs..."}
-[2025-12-14 10:34:37] production.INFO: Fetching balance from Parsian Bank {"accountNumber":"30101730876601","url":"https://openapi.parsian-bank.ir/channelServices/1.0//Get%20accont%20balance","apiEndpoint":"https://openapi.parsian-bank.ir/channelServices/1.0/","serviceName":"Get accont balance"}
-[2025-12-14 10:34:37] production.INFO: Trying without URL encoding for Parsian Bank service {"accountNumber":"30101730876601","url":"https://openapi.parsian-bank.ir/channelServices/1.0//Get accont balance"}
-[2025-12-14 10:34:37] production.ERROR: Failed to fetch balance from Parsian Bank {"accountNumber":"30101730876601","status":404,"response":"<am:fault xmlns:am=\"http://wso2.org/apimanager\"><am:code>404</am:code><am:type>Status report</am:type><am:message>Runtime Error</am:message><am:description>No matching resource found for given API Request</am:description></am:fault>","data":null,"url":"https://openapi.parsian-bank.ir/channelServices/1.0//Get accont balance"}
-[2025-12-14 10:34:37] production.ERROR: Failed to fetch balance for deposit ID 57: Failed to fetch balance from Parsian Bank (HTTP 404): Unknown error

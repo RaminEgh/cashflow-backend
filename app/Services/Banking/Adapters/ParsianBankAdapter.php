@@ -217,7 +217,7 @@ class ParsianBankAdapter implements BankAdapterInterface
     /**
      * @throws \Exception
      */
-    public function getBalance(): float
+    public function getBalance(): int
     {
         $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? throw new \Exception('Account number is required');
 
@@ -279,14 +279,6 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         $data = $response->json();
 
-        Log::debug('Parsian Bank API response', [
-            'accountNumber' => $accountNumber,
-            'url' => $url,
-            'status' => $response->status(),
-            'data' => $data,
-            'responseBody' => $response->body(),
-        ]);
-
         // Check for ChAccountNotFoundException or similar
         if (isset($data['exception']) || (isset($data['error']) && str_contains(strtolower($data['error']), 'account not found'))) {
             Log::error('Parsian Bank account not found', [
@@ -316,7 +308,7 @@ class ParsianBankAdapter implements BankAdapterInterface
             'balance' => $data['balance'],
         ]);
 
-        return (float) $data['balance'];
+        return (int) $data['balance'];
     }
 
     /**
@@ -367,9 +359,9 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         return [
             'accountNumber' => $data['accountNumber'],
-            'balance' => (float) $data['balance'],
-            'todayDepositAmount' => (float) ($data['todayDepositAmount'] ?? 0),
-            'todayWithdrawAmount' => (float) ($data['todayWithdrawAmount'] ?? 0),
+            'balance' => (int) $data['balance'],
+            'todayDepositAmount' => (int) ($data['todayDepositAmount'] ?? 0),
+            'todayWithdrawAmount' => (int) ($data['todayWithdrawAmount'] ?? 0),
             'currency' => $data['currency'] ?? 'IRR',
         ];
     }

@@ -44,6 +44,46 @@ sudo reboot
 sudo apt install -y git curl wget unzip software-properties-common
 ```
 
+### Set Server Timezone
+
+It's important to set the correct timezone for your server to ensure accurate timestamps in logs and database records.
+
+**Option 1: Interactive Selection (Recommended)**
+
+```bash
+sudo dpkg-reconfigure tzdata
+```
+
+This will show an interactive menu where you can:
+
+1. Select your geographic area (e.g., `Asia`, `America`, `Europe`)
+2. Select your city/region (e.g., `Tehran`, `New_York`, `London`)
+
+**Option 2: Set Timezone Directly**
+
+```bash
+# List available timezones (optional - to find your timezone)
+timedatectl list-timezones | grep -i your_city
+
+# Set timezone (replace with your timezone)
+sudo timedatectl set-timezone Asia/Tehran
+
+# Examples:
+# sudo timedatectl set-timezone America/New_York
+# sudo timedatectl set-timezone Europe/London
+# sudo timedatectl set-timezone Asia/Dubai
+```
+
+**Verify the timezone:**
+
+```bash
+timedatectl
+# Or check the current time
+date
+```
+
+**Note:** For Laravel applications, it's recommended to set the server timezone to UTC and handle timezone conversions in the application layer using Laravel's timezone configuration in `config/app.php`. However, setting the server timezone correctly is still important for system logs and cron jobs.
+
 ---
 
 ## 2. Install Required Software

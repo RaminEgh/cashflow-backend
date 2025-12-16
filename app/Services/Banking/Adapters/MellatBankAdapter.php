@@ -19,13 +19,13 @@ class MellatBankAdapter implements BankAdapterInterface
         return $this;
     }
 
-    public function getBalance(): float
+    public function getBalance(): int
     {
         $response = Http::withToken($this->apiEndpoint)->post($this->apiEndpoint, [
             'number' => $this->credentials['number'],
         ]);
 
-        return (float) $response->json('data.current_balance');
+        return (int) $response->json('data.current_balance');
     }
 
     public function getAccountBalance(): array
@@ -36,8 +36,8 @@ class MellatBankAdapter implements BankAdapterInterface
         return [
             'accountNumber' => $accountNumber,
             'balance' => $balance,
-            'todayDepositAmount' => 0.0,
-            'todayWithdrawAmount' => 0.0,
+            'todayDepositAmount' => 0,
+            'todayWithdrawAmount' => 0,
             'currency' => 'IRR',
         ];
     }

@@ -92,6 +92,54 @@ it('can fetch all deposits', function () {
     expect($response->json('data.list'))->toHaveCount(5);
 });
 
+it('can toggle deposit banking api access', function () {
+    $organ = Organ::factory()->create();
+    $bank = Bank::factory()->create();
+
+    $deposit = Deposit::factory()->create([
+        'organ_id' => $organ->id,
+        'bank_id' => $bank->id,
+        'has_access_banking_api' => false,
+        'created_by' => $this->user->id,
+        'updated_by' => $this->user->id,
+    ]);
+
+    $response = $this->patchJson("/api/admin/deposit/{$deposit->id}/banking-api-access", [
+        'has_access_banking_api' => true,
+    ]);
+
+    $response->assertSuccessful()
+        ->assertJsonPath('data.has_access_banking_api', true);
+
+    $deposit->refresh();
+    expect($deposit->has_access_banking_api)->toBeTrue();
+});
+
+it('prevents non-admin from toggling deposit banking api access', function () {
+    $organ = Organ::factory()->create();
+    $bank = Bank::factory()->create();
+
+    $deposit = Deposit::factory()->create([
+        'organ_id' => $organ->id,
+        'bank_id' => $bank->id,
+        'has_access_banking_api' => false,
+        'created_by' => $this->user->id,
+        'updated_by' => $this->user->id,
+    ]);
+
+    $organUser = User::factory()->create([
+        'type' => User::TYPE_ORGAN,
+    ]);
+
+    Sanctum::actingAs($organUser);
+
+    $response = $this->patchJson("/api/admin/deposit/{$deposit->id}/banking-api-access", [
+        'has_access_banking_api' => true,
+    ]);
+
+    $response->assertForbidden();
+});
+
 it('can filter deposits by organ_id', function () {
     $organ1 = Organ::factory()->create();
     $organ2 = Organ::factory()->create();

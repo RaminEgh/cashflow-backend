@@ -71,6 +71,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['is-admin']], function () {
         Route::get('/{deposit}', [DepositController::class, 'show'])->middleware('can:'.AdminPermissionKey::DEPOSIT_SHOW);
         Route::post('/', [DepositController::class, 'store'])->middleware('can:'.AdminPermissionKey::DEPOSIT_CREATE);
         Route::put('/{deposit}', [DepositController::class, 'update'])->middleware('can:'.AdminPermissionKey::DEPOSIT_EDIT);
+        Route::patch('/{deposit}/banking-api-access', [DepositController::class, 'updateBankingApiAccess'])->middleware('can:'.AdminPermissionKey::DEPOSIT_EDIT);
         Route::delete('/{deposit}', [DepositController::class, 'delete'])->middleware('can:'.AdminPermissionKey::DEPOSIT_DELETE);
     });
 

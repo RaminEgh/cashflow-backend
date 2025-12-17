@@ -80,16 +80,22 @@ class FetchBankAccountBalance implements ShouldQueue
         $rahkaranStatus = BalanceStatus::Fail;
 
         // Fetch bank balance
-        try {
-            $adapter = $bankFactory->make($this->deposit->bank->slug);
-            $balance = $adapter->setAccount([
-                'accountNumber' => $this->deposit->number,
-            ])->getBalance();
-            $balanceStatus = BalanceStatus::Success;
+        if ($this->shouldFetchBalanceFromBankApi()) {
+            try {
+                $adapter = $bankFactory->make($this->deposit->bank->slug);
+                $balance = $adapter->setAccount([
+                    'accountNumber' => $this->deposit->number,
+                ])->getBalance();
+                $balanceStatus = BalanceStatus::Success;
 
-            Log::info("Successfully fetched bank balance for deposit ID: {$this->deposit->id} with balance: {$balance}");
-        } catch (Throwable $e) {
-            Log::error("Failed to fetch bank balance for deposit ID {$this->deposit->id}: " . $e->getMessage());
+                Log::info("Successfully fetched bank balance for deposit ID: {$this->deposit->id} with balance: {$balance}");
+            } catch (Throwable $e) {
+                Log::error("Failed to fetch bank balance for deposit ID {$this->deposit->id}: ".$e->getMessage());
+            }
+        } else {
+            Log::info("Skipping bank balance fetch (no access configured) for deposit ID: {$this->deposit->id}", [
+                'bank' => $this->deposit->bank->slug,
+            ]);
         }
 
         // Fetch Rahkaran balance
@@ -123,7 +129,7 @@ class FetchBankAccountBalance implements ShouldQueue
                 Log::error("Failed to fetch Rahkaran balance for deposit ID {$this->deposit->id}: HTTP {$response->status()}");
             }
         } catch (Throwable $e) {
-            Log::error("Failed to fetch Rahkaran balance for deposit ID {$this->deposit->id}: " . $e->getMessage());
+            Log::error("Failed to fetch Rahkaran balance for deposit ID {$this->deposit->id}: ".$e->getMessage());
         }
 
         // Create balance record with both balances
@@ -162,5 +168,10 @@ class FetchBankAccountBalance implements ShouldQueue
             'bank_balance' => $balance,
             'rahkaran_balance' => $rahkaranBalance,
         ]);
+    }
+
+    private function shouldFetchBalanceFromBankApi(): bool
+    {
+        return (bool) $this->deposit->has_access_banking_api;
     }
 }

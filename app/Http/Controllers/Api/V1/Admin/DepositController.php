@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Deposit\StoreDepositRequest;
+use App\Http\Requests\Admin\Deposit\UpdateDepositBankingApiAccessRequest;
 use App\Http\Requests\Admin\Organ\UpdateOrganRequest;
 use App\Http\Resources\V1\Admin\Deposit\DepositCollection;
 use App\Http\Resources\V1\Admin\Deposit\DepositResource;
@@ -72,6 +73,16 @@ class DepositController extends Controller
     public function show(Deposit $deposit): JsonResponse
     {
         return Helper::successResponse(null, new DepositResource($deposit));
+    }
+
+    public function updateBankingApiAccess(UpdateDepositBankingApiAccessRequest $request, Deposit $deposit): JsonResponse
+    {
+        $deposit->update([
+            'has_access_banking_api' => $request->boolean('has_access_banking_api'),
+            'updated_by' => $request->user()->id,
+        ]);
+
+        return Helper::successResponse(null, new DepositResource($deposit->refresh()));
     }
 
     public function update(UpdateOrganRequest $request, Deposit $deposit): JsonResponse

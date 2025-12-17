@@ -31,6 +31,7 @@ class DepositResource extends JsonResource
             ],
             'currency' => $this->currency,
             'description' => $this->description,
+            'has_access_banking_api' => (bool) $this->has_access_banking_api,
             'balance' => $this->balance,
             'rahkaran_balance' => $this->rahkaran_balance,
             'balance_last_synced_at' => Carbon::parse($this->balance_last_synced_at)->diffForHumans(),

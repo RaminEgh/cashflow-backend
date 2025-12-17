@@ -24,6 +24,7 @@ class Deposit extends Model
     {
         return [
             'type' => DepositType::class,
+            'has_access_banking_api' => 'boolean',
         ];
     }
 

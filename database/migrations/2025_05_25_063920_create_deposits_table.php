@@ -27,6 +27,7 @@ return new class extends Migration
             $table->enum('type', DepositType::values());
             $table->string('currency');
             $table->string('description')->nullable();
+            $table->boolean('has_access_banking_api')->default(false);
             $table->unsignedBigInteger('created_by');
             $table->unsignedBigInteger('updated_by');
             $table->timestamps();

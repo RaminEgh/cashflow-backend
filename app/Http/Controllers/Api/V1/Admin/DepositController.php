@@ -10,9 +10,11 @@ use App\Http\Requests\Admin\Organ\UpdateOrganRequest;
 use App\Http\Resources\V1\Admin\Deposit\DepositCollection;
 use App\Http\Resources\V1\Admin\Deposit\DepositResource;
 use App\Http\Resources\V1\Common\PaginationCollection;
+use App\Jobs\FetchBankAccountBalance;
 use App\Models\Deposit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DepositController extends Controller
 {
@@ -77,12 +79,17 @@ class DepositController extends Controller
 
     public function updateBankingApiAccess(UpdateDepositBankingApiAccessRequest $request, Deposit $deposit): JsonResponse
     {
-        $deposit->update([
-            'has_access_banking_api' => $request->boolean('has_access_banking_api'),
-            'updated_by' => $request->user()->id,
-        ]);
+        DB::transaction(function () use ($request, $deposit) {
+            $deposit->has_access_banking_api = $request->boolean('has_access_banking_api');
+            $deposit->updated_by = $request->user()->id;
+            $deposit->save();
 
-        return Helper::successResponse(null, new DepositResource($deposit->refresh()));
+            if ($deposit->has_access_banking_api) {
+                FetchBankAccountBalance::dispatch($deposit);
+            }
+        });
+
+        return Helper::successResponse('وضعیت دسترسی به API بانکی با موفقیت ویرایش شد.');
     }
 
     public function update(UpdateOrganRequest $request, Deposit $deposit): JsonResponse

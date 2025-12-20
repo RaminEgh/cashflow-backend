@@ -2,8 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\UserType;
 use App\Helpers\Helper;
-use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,7 +17,7 @@ class IsOrgan
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (auth()->check() && auth()->user()->type === User::TYPE_ORGAN && auth()->user()->organs()->first()) {
+        if (auth()->check() && auth()->user()->type === UserType::Organ && auth()->user()->organs()->first()) {
             return $next($request);
         }
 

@@ -22,5 +22,6 @@ class UserLogCollection extends ResourceCollection
                 'description' => $item->description,
                 'date' => $item->last_activity,
             ];
-        });    }
+        });
+    }
 }

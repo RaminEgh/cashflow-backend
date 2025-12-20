@@ -3,13 +3,12 @@
 namespace App\Console\Commands;
 
 use App\Services\Rahkaran\BalanceFetchService;
-use App\Services\Rahkaran\DepositFetchService;
-use App\Services\Rahkaran\OrganizationFetchService;
 use Illuminate\Console\Command;
 
 class FetchBalancesFromRahkaranCommand extends Command
 {
-    public function __construct(protected BalanceFetchService $balanceFetchService) {
+    public function __construct(protected BalanceFetchService $balanceFetchService)
+    {
         parent::__construct();
     }
 
@@ -38,7 +37,7 @@ class FetchBalancesFromRahkaranCommand extends Command
             $this->balanceFetchService->fetchAndStore();
             $this->info('Balances fetched and saved successfully.');
         } catch (\Exception $e) {
-            $this->error('Failed: ' . $e->getMessage());
+            $this->error('Failed: '.$e->getMessage());
         }
 
         $this->info('All balance update jobs have been dispatched successfully!');

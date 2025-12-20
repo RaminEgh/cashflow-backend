@@ -54,8 +54,9 @@ class CalculateMonthlyIncomeExpenseCommand extends Command
     private function calculateForSingleDeposit(int $depositId, string $yearMonth)
     {
         $deposit = Deposit::find($depositId);
-        if (!$deposit) {
+        if (! $deposit) {
             $this->error("Deposit with ID {$depositId} not found.");
+
             return;
         }
 
@@ -80,8 +81,9 @@ class CalculateMonthlyIncomeExpenseCommand extends Command
     private function calculateForOrgan(int $organId, string $yearMonth)
     {
         $organ = Organ::find($organId);
-        if (!$organ) {
+        if (! $organ) {
             $this->error("Organ with ID {$organId} not found.");
+
             return;
         }
 
@@ -179,15 +181,16 @@ class CalculateMonthlyIncomeExpenseCommand extends Command
     private function calculateYearlySummary(int $depositId, string $yearMonth)
     {
         $deposit = Deposit::find($depositId);
-        if (!$deposit) {
+        if (! $deposit) {
             $this->error("Deposit with ID {$depositId} not found.");
+
             return;
         }
 
         $year = substr($yearMonth, 0, 4);
         $this->info("Calculating yearly summary for deposit: {$deposit->number} in year {$year}");
 
-        $results = $this->monthlyIncomeExpenseService->getYearlySummary($depositId, (int)$year);
+        $results = $this->monthlyIncomeExpenseService->getYearlySummary($depositId, (int) $year);
 
         $tableData = [];
         foreach ($results as $result) {
@@ -211,23 +214,24 @@ class CalculateMonthlyIncomeExpenseCommand extends Command
         $totalNetChange = $results->sum('net_change');
 
         $this->info("\nYearly Totals:");
-        $this->info("Total Income: " . number_format($totalIncome));
-        $this->info("Total Expenses: " . number_format($totalExpenses));
-        $this->info("Net Change: " . number_format($totalNetChange));
+        $this->info('Total Income: '.number_format($totalIncome));
+        $this->info('Total Expenses: '.number_format($totalExpenses));
+        $this->info('Net Change: '.number_format($totalNetChange));
     }
 
     private function calculateOrganYearlySummary(int $organId, string $yearMonth)
     {
         $organ = Organ::find($organId);
-        if (!$organ) {
+        if (! $organ) {
             $this->error("Organ with ID {$organId} not found.");
+
             return;
         }
 
         $year = substr($yearMonth, 0, 4);
         $this->info("Calculating yearly summary for organ: {$organ->name} in year {$year}");
 
-        $result = $this->monthlyIncomeExpenseService->getOrganYearlySummary($organId, (int)$year);
+        $result = $this->monthlyIncomeExpenseService->getOrganYearlySummary($organId, (int) $year);
 
         $tableData = [];
         foreach ($result['monthly_data'] as $monthlyResult) {
@@ -247,20 +251,20 @@ class CalculateMonthlyIncomeExpenseCommand extends Command
 
         $yearlyTotals = $result['yearly_totals'];
         $this->info("\nYearly Totals:");
-        $this->info("Total Income: " . number_format($yearlyTotals['total_income']));
-        $this->info("Total Expenses: " . number_format($yearlyTotals['total_expenses']));
-        $this->info("Total Net Change: " . number_format($yearlyTotals['total_net_change']));
+        $this->info('Total Income: '.number_format($yearlyTotals['total_income']));
+        $this->info('Total Expenses: '.number_format($yearlyTotals['total_expenses']));
+        $this->info('Total Net Change: '.number_format($yearlyTotals['total_net_change']));
     }
 
     private function showAvailableOptions()
     {
-        $this->info("Available commands:");
-        $this->info("1. Calculate for specific deposit: php artisan app:calculate-monthly-income-expense {deposit_id} {year_month}");
-        $this->info("2. Calculate for all deposits: php artisan app:calculate-monthly-income-expense --all {year_month}");
-        $this->info("3. Calculate yearly summary: php artisan app:calculate-monthly-income-expense {deposit_id} {year_month} --yearly");
-        $this->info("4. Calculate for organ: php artisan app:calculate-monthly-income-expense --organ={organ_id} {year_month}");
-        $this->info("5. Calculate organ yearly summary: php artisan app:calculate-monthly-income-expense --organ={organ_id} {year_month} --yearly");
-        $this->info("6. Calculate for all organs: php artisan app:calculate-monthly-income-expense --all-organs {year_month}");
+        $this->info('Available commands:');
+        $this->info('1. Calculate for specific deposit: php artisan app:calculate-monthly-income-expense {deposit_id} {year_month}');
+        $this->info('2. Calculate for all deposits: php artisan app:calculate-monthly-income-expense --all {year_month}');
+        $this->info('3. Calculate yearly summary: php artisan app:calculate-monthly-income-expense {deposit_id} {year_month} --yearly');
+        $this->info('4. Calculate for organ: php artisan app:calculate-monthly-income-expense --organ={organ_id} {year_month}');
+        $this->info('5. Calculate organ yearly summary: php artisan app:calculate-monthly-income-expense --organ={organ_id} {year_month} --yearly');
+        $this->info('6. Calculate for all organs: php artisan app:calculate-monthly-income-expense --all-organs {year_month}');
 
         $this->info("\nAvailable deposits:");
         $deposits = Deposit::with('organ')->get();

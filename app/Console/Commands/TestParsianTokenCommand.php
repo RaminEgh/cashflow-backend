@@ -26,7 +26,7 @@ class TestParsianTokenCommand extends Command
         }
 
         $this->info("Client ID: {$clientId}");
-        $this->info('Client Secret: ' . substr($clientSecret, 0, 10) . '...');
+        $this->info('Client Secret: '.substr($clientSecret, 0, 10).'...');
 
         // Test sandbox URL
         $sandboxUrl = config('banks.parsian.oauth_sandbox_token_url', 'https://sandbox.parsian-bank.ir/oauth2/token');
@@ -46,19 +46,19 @@ class TestParsianTokenCommand extends Command
                 $data = $response->json();
                 if (isset($data['access_token'])) {
                     $this->info('✓ Successfully obtained token from Sandbox!');
-                    $this->info('Token: ' . substr($data['access_token'], 0, 50) . '...');
-                    $this->info('Expires in: ' . $data['expires_in'] . ' seconds');
-                    $this->info('Token type: ' . $data['token_type']);
+                    $this->info('Token: '.substr($data['access_token'], 0, 50).'...');
+                    $this->info('Expires in: '.$data['expires_in'].' seconds');
+                    $this->info('Token type: '.$data['token_type']);
 
                     return 0;
                 }
             }
 
             $this->warn('Failed to get token from Sandbox');
-            $this->info('Status: ' . $response->status());
-            $this->info('Response: ' . $response->body());
+            $this->info('Status: '.$response->status());
+            $this->info('Response: '.$response->body());
         } catch (\Exception $e) {
-            $this->error('Exception: ' . $e->getMessage());
+            $this->error('Exception: '.$e->getMessage());
         }
 
         // Test production URL
@@ -79,21 +79,21 @@ class TestParsianTokenCommand extends Command
                 $data = $response->json();
                 if (isset($data['access_token'])) {
                     $this->info('✓ Successfully obtained token from Production!');
-                    $this->info('Token: ' . substr($data['access_token'], 0, 50) . '...');
-                    $this->info('Expires in: ' . $data['expires_in'] . ' seconds');
-                    $this->info('Token type: ' . $data['token_type']);
+                    $this->info('Token: '.substr($data['access_token'], 0, 50).'...');
+                    $this->info('Expires in: '.$data['expires_in'].' seconds');
+                    $this->info('Token type: '.$data['token_type']);
 
                     return 0;
                 }
             }
 
             $this->error('Failed to get token from Production');
-            $this->info('Status: ' . $response->status());
-            $this->info('Response: ' . $response->body());
+            $this->info('Status: '.$response->status());
+            $this->info('Response: '.$response->body());
 
             return 1;
         } catch (\Exception $e) {
-            $this->error('Exception: ' . $e->getMessage());
+            $this->error('Exception: '.$e->getMessage());
 
             return 1;
         }

@@ -16,7 +16,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->user = User::factory()->create([
-        'type' => User::TYPE_ADMIN,
+        'type' => \App\Enums\UserType::Admin,
     ]);
 
     Sanctum::actingAs($this->user);
@@ -24,7 +24,7 @@ beforeEach(function () {
     $role = Role::create([
         'slug' => 'test-deposit-admin-role',
         'label' => 'Test Deposit Admin Role',
-        'user_type' => User::TYPE_ADMIN,
+        'user_type' => \App\Enums\UserType::Admin->value,
         'description' => 'Test role for deposit tests',
         'created_by' => $this->user->id,
         'updated_by' => $this->user->id,
@@ -42,7 +42,7 @@ beforeEach(function () {
         Permission::create([
             'slug' => $permissionSlug,
             'label' => $permissionSlug,
-            'user_type' => User::TYPE_ADMIN,
+            'user_type' => \App\Enums\UserType::Admin->value,
         ]);
     }
 
@@ -55,7 +55,7 @@ beforeEach(function () {
     Cache::flush();
 
     Gate::before(function ($user) {
-        if ($user->type === User::TYPE_ADMIN) {
+        if ($user->type === \App\Enums\UserType::Admin) {
             return true;
         }
     });
@@ -128,7 +128,7 @@ it('prevents non-admin from toggling deposit banking api access', function () {
     ]);
 
     $organUser = User::factory()->create([
-        'type' => User::TYPE_ORGAN,
+        'type' => \App\Enums\UserType::Organ,
     ]);
 
     Sanctum::actingAs($organUser);

@@ -17,7 +17,7 @@ class StoreUploadRequest extends FormRequest
             'file' => [
                 'required',
                 'file',
-                'max:' . config('upload.max_file_size', 10240),
+                'max:'.config('upload.max_file_size', 10240),
             ],
             'title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
@@ -59,7 +59,7 @@ class StoreUploadRequest extends FormRequest
                     }
 
                     if (! $isAllowed) {
-                        $validator->errors()->add('file', 'The file type is not allowed. Allowed types: ' . implode(', ', $allowedTypes));
+                        $validator->errors()->add('file', 'The file type is not allowed. Allowed types: '.implode(', ', $allowedTypes));
                     }
                 }
             }

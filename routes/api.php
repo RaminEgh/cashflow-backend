@@ -1,7 +1,7 @@
 <?php
 
-use App\Helpers\Helper;
 use App\Http\Controllers\Api\V1\Common\UploadController;
+use App\Http\Controllers\Api\V1\Common\UserController;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/auth.php';
@@ -18,9 +18,7 @@ Route::group(['prefix' => 'upload'], function () {
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
 
-    Route::get('/user', function () {
-        return Helper::successResponse('', auth()->user());
-    });
+    Route::get('/user', [UserController::class, 'profile']);
 
     require __DIR__.'/admin.php';
     require __DIR__.'/organ.php';
@@ -30,5 +28,4 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::post('/', [UploadController::class, 'store']);
         Route::get('/{upload}', [UploadController::class, 'show']);
     });
-
 });

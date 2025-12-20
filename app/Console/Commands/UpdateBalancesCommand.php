@@ -164,7 +164,7 @@ class UpdateBalancesCommand extends Command
         if (! $bank) {
             $this->error("Bank with identifier '{$bankIdentifier}' not found.");
             $this->info('Available banks:');
-            Bank::all()->each(fn($b) => $this->line("  - {$b->name} (slug: {$b->slug}, ID: {$b->id})"));
+            Bank::all()->each(fn ($b) => $this->line("  - {$b->name} (slug: {$b->slug}, ID: {$b->id})"));
 
             return 1;
         }
@@ -233,4 +233,3 @@ class UpdateBalancesCommand extends Command
         return 0;
     }
 }
-

@@ -14,7 +14,7 @@ class BankingServiceProvider extends ServiceProvider implements DeferrableProvid
     public function register(): void
     {
         $this->app->singleton(BankAdapterFactory::class, function () {
-            return new BankAdapterFactory();
+            return new BankAdapterFactory;
         });
     }
 

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Constants\CacheKey;
+use App\Enums\UserStatus;
+use App\Enums\UserType;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Access\StoreAccessRequest;
@@ -20,7 +22,7 @@ class AdminController extends Controller
 {
     public function index(): JsonResponse
     {
-        $users = User::whereType(User::TYPE_ADMIN)->get();
+        $users = User::whereType(UserType::Admin->value)->get();
 
         return Helper::successResponse(null, [
             'list' => new AdminCollection($users),
@@ -35,7 +37,7 @@ class AdminController extends Controller
     public function store(StoreAdminRequest $request): JsonResponse
     {
         DB::beginTransaction();
-        $user = User::create([...$request->validated(), 'password' => Hash::make($request->password), 'type' => User::TYPE_ADMIN, 'status' => User::STATUS_ACTIVE]);
+        $user = User::create([...$request->validated(), 'password' => Hash::make($request->password), 'type' => UserType::Admin, 'status' => UserStatus::Active]);
         $user->roles()->syncWithPivotValues($request->roles, ['assigned_by' => auth()->user()->id]);
         DB::commit();
 
@@ -44,7 +46,7 @@ class AdminController extends Controller
 
     public function update(StoreAccessRequest $request, User $user)
     {
-        if ($user->type === User::TYPE_ADMIN) {
+        if ($user->type === UserType::Admin) {
             $rolesId = $request->roles;
             $user->roles()->syncWithPivotValues($rolesId, ['assigned_by' => auth()->user()->id]);
             foreach ($user->roles as $role) {
@@ -60,7 +62,7 @@ class AdminController extends Controller
     public function delete(User $user)
     {
         DB::beginTransaction();
-        if ($user->type === User::TYPE_ADMIN && $user->id !== auth()->id()) {
+        if ($user->type === UserType::Admin && $user->id !== auth()->id()) {
             $user->roles()->detach();
             Cache::forget(CacheKey::USER_ROLE.$user->id);
             $user->delete();

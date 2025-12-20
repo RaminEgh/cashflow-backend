@@ -46,6 +46,7 @@ class AllocationSeeder extends Seeder
 
                 if ($existing) {
                     $this->command->line("  Allocation for year {$year} already exists, skipping...");
+
                     continue;
                 }
 
@@ -115,7 +116,7 @@ class AllocationSeeder extends Seeder
                 ]);
 
                 $totalCreated++;
-                $this->command->line("  Created allocation for year {$year} - Total Budget: " . number_format($baseYearlyBudget));
+                $this->command->line("  Created allocation for year {$year} - Total Budget: ".number_format($baseYearlyBudget));
             }
         }
 

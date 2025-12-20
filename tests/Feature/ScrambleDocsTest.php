@@ -7,7 +7,7 @@ it('serves the OpenAPI JSON', function () {
 
     $response->assertSuccessful();
     $response->assertHeader('content-type');
-    $response->assertJson(fn(AssertableJson $json) => $json->has('openapi')->etc());
+    $response->assertJson(fn (AssertableJson $json) => $json->has('openapi')->etc());
 });
 
 it('serves the API docs UI', function () {

@@ -15,7 +15,7 @@ class SettingControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Create and authenticate a user
         $user = User::factory()->create();
         Sanctum::actingAs($user);
@@ -29,13 +29,13 @@ class SettingControllerTest extends TestCase
         $response = $this->getJson('/api/settings');
 
         $response->assertStatus(200)
-                ->assertJson([
-                    'success' => true,
-                    'data' => [
-                        'app.name' => 'My App',
-                        'app.version' => '1.0.0'
-                    ]
-                ]);
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'app.name' => 'My App',
+                    'app.version' => '1.0.0',
+                ],
+            ]);
     }
 
     public function test_can_get_specific_setting()
@@ -45,35 +45,35 @@ class SettingControllerTest extends TestCase
         $response = $this->getJson('/api/settings/get?key=app.name');
 
         $response->assertStatus(200)
-                ->assertJson([
-                    'success' => true,
-                    'data' => [
-                        'key' => 'app.name',
-                        'value' => 'My App'
-                    ]
-                ]);
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'key' => 'app.name',
+                    'value' => 'My App',
+                ],
+            ]);
     }
 
     public function test_can_set_setting()
     {
         $response = $this->postJson('/api/settings/set', [
             'key' => 'app.name',
-            'value' => 'My App'
+            'value' => 'My App',
         ]);
 
         $response->assertStatus(200)
-                ->assertJson([
-                    'success' => true,
-                    'message' => 'Setting saved successfully',
-                    'data' => [
-                        'key' => 'app.name',
-                        'value' => 'My App'
-                    ]
-                ]);
+            ->assertJson([
+                'success' => true,
+                'message' => 'Setting saved successfully',
+                'data' => [
+                    'key' => 'app.name',
+                    'value' => 'My App',
+                ],
+            ]);
 
         $this->assertDatabaseHas('settings', [
             'key' => 'app.name',
-            'value' => 'My App'
+            'value' => 'My App',
         ]);
     }
 
@@ -83,14 +83,14 @@ class SettingControllerTest extends TestCase
 
         $response = $this->postJson('/api/settings/set', [
             'key' => 'app.config',
-            'value' => $arrayValue
+            'value' => $arrayValue,
         ]);
 
         $response->assertStatus(200);
 
         $this->assertDatabaseHas('settings', [
             'key' => 'app.config',
-            'value' => json_encode($arrayValue)
+            'value' => json_encode($arrayValue),
         ]);
     }
 
@@ -100,17 +100,17 @@ class SettingControllerTest extends TestCase
         Setting::create(['key' => 'key2', 'value' => 'value2']);
 
         $response = $this->postJson('/api/settings/get-multiple', [
-            'keys' => ['key1', 'key2']
+            'keys' => ['key1', 'key2'],
         ]);
 
         $response->assertStatus(200)
-                ->assertJson([
-                    'success' => true,
-                    'data' => [
-                        'key1' => 'value1',
-                        'key2' => 'value2'
-                    ]
-                ]);
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'key1' => 'value1',
+                    'key2' => 'value2',
+                ],
+            ]);
     }
 
     public function test_can_set_multiple_settings()
@@ -118,23 +118,23 @@ class SettingControllerTest extends TestCase
         $settings = [
             'key1' => 'value1',
             'key2' => 'value2',
-            'key3' => ['nested' => 'value']
+            'key3' => ['nested' => 'value'],
         ];
 
         $response = $this->postJson('/api/settings/set-multiple', [
-            'settings' => $settings
+            'settings' => $settings,
         ]);
 
         $response->assertStatus(200)
-                ->assertJson([
-                    'success' => true,
-                    'message' => 'Settings saved successfully'
-                ]);
+            ->assertJson([
+                'success' => true,
+                'message' => 'Settings saved successfully',
+            ]);
 
         foreach ($settings as $key => $value) {
             $this->assertDatabaseHas('settings', [
                 'key' => $key,
-                'value' => is_string($value) ? $value : json_encode($value)
+                'value' => is_string($value) ? $value : json_encode($value),
             ]);
         }
     }
@@ -146,13 +146,13 @@ class SettingControllerTest extends TestCase
         $response = $this->getJson('/api/settings/has?key=existing_key');
 
         $response->assertStatus(200)
-                ->assertJson([
-                    'success' => true,
-                    'data' => [
-                        'key' => 'existing_key',
-                        'exists' => true
-                    ]
-                ]);
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'key' => 'existing_key',
+                    'exists' => true,
+                ],
+            ]);
     }
 
     public function test_can_check_if_setting_does_not_exist()
@@ -160,13 +160,13 @@ class SettingControllerTest extends TestCase
         $response = $this->getJson('/api/settings/has?key=non_existent_key');
 
         $response->assertStatus(200)
-                ->assertJson([
-                    'success' => true,
-                    'data' => [
-                        'key' => 'non_existent_key',
-                        'exists' => false
-                    ]
-                ]);
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'key' => 'non_existent_key',
+                    'exists' => false,
+                ],
+            ]);
     }
 
     public function test_can_delete_setting()
@@ -176,13 +176,13 @@ class SettingControllerTest extends TestCase
         $response = $this->deleteJson('/api/settings/delete?key=to_delete');
 
         $response->assertStatus(200)
-                ->assertJson([
-                    'success' => true,
-                    'message' => 'Setting deleted successfully'
-                ]);
+            ->assertJson([
+                'success' => true,
+                'message' => 'Setting deleted successfully',
+            ]);
 
         $this->assertDatabaseMissing('settings', [
-            'key' => 'to_delete'
+            'key' => 'to_delete',
         ]);
     }
 
@@ -195,13 +195,13 @@ class SettingControllerTest extends TestCase
         $response = $this->getJson('/api/settings/by-prefix?prefix=app.');
 
         $response->assertStatus(200)
-                ->assertJson([
-                    'success' => true,
-                    'data' => [
-                        'app.name' => 'My App',
-                        'app.version' => '1.0.0'
-                    ]
-                ]);
+            ->assertJson([
+                'success' => true,
+                'data' => [
+                    'app.name' => 'My App',
+                    'app.version' => '1.0.0',
+                ],
+            ]);
     }
 
     public function test_can_delete_settings_by_prefix()
@@ -213,13 +213,13 @@ class SettingControllerTest extends TestCase
         $response = $this->deleteJson('/api/settings/by-prefix?prefix=app.');
 
         $response->assertStatus(200)
-                ->assertJson([
-                    'success' => true,
-                    'message' => 'Deleted 2 settings',
-                    'data' => [
-                        'deleted_count' => 2
-                    ]
-                ]);
+            ->assertJson([
+                'success' => true,
+                'message' => 'Deleted 2 settings',
+                'data' => [
+                    'deleted_count' => 2,
+                ],
+            ]);
 
         $this->assertDatabaseMissing('settings', ['key' => 'app.name']);
         $this->assertDatabaseMissing('settings', ['key' => 'app.version']);
@@ -231,10 +231,10 @@ class SettingControllerTest extends TestCase
         $response = $this->postJson('/api/settings/clear-cache');
 
         $response->assertStatus(200)
-                ->assertJson([
-                    'success' => true,
-                    'message' => 'Settings cache cleared successfully'
-                ]);
+            ->assertJson([
+                'success' => true,
+                'message' => 'Settings cache cleared successfully',
+            ]);
     }
 
     public function test_validates_required_fields()
@@ -242,18 +242,18 @@ class SettingControllerTest extends TestCase
         $response = $this->postJson('/api/settings/set', []);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['key', 'value']);
+            ->assertJsonValidationErrors(['key', 'value']);
     }
 
     public function test_validates_key_format()
     {
         $response = $this->postJson('/api/settings/set', [
             'key' => 'invalid key!',
-            'value' => 'value'
+            'value' => 'value',
         ]);
 
         $response->assertStatus(422)
-                ->assertJsonValidationErrors(['key']);
+            ->assertJsonValidationErrors(['key']);
     }
 
     public function test_returns_404_when_deleting_non_existent_setting()
@@ -261,10 +261,10 @@ class SettingControllerTest extends TestCase
         $response = $this->deleteJson('/api/settings/delete?key=non_existent');
 
         $response->assertStatus(404)
-                ->assertJson([
-                    'success' => false,
-                    'message' => 'Setting not found or could not be deleted'
-                ]);
+            ->assertJson([
+                'success' => false,
+                'message' => 'Setting not found or could not be deleted',
+            ]);
     }
 
     public function test_requires_authentication()

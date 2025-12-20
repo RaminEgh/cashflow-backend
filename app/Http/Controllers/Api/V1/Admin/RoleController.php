@@ -12,7 +12,6 @@ use App\Http\Resources\V1\Admin\Role\RoleResource;
 use App\Http\Resources\V1\Common\PaginationCollection;
 use App\Models\Permission;
 use App\Models\Role;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -35,7 +34,7 @@ class RoleController extends Controller
             $role = Role::create([
                 'slug' => $request->slug,
                 'label' => $request->label,
-                'user_type' => User::TYPE_ADMIN,
+                'user_type' => \App\Enums\UserType::Admin->value,
                 'description' => $request->description,
                 'created_by' => auth()->user()->id,
                 'updated_by' => auth()->user()->id,
@@ -44,11 +43,9 @@ class RoleController extends Controller
             $role->permissions()->syncWithPivotValues($request->permissions, ['updated_by' => auth()->user()->id]);
 
             return Helper::successResponse('سمت جدید با موفقیت ایجاد شد.');
-
         } catch (Exception $exception) {
             return Helper::errorResponse('در ایجاد سمت جدید خطایی رخ داد.', $exception->getMessage());
         }
-
     }
 
     public function show(Role $role): JsonResponse

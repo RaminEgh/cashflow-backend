@@ -4,20 +4,30 @@ namespace App\Constants;
 
 class OrganPermissionKey
 {
-    CONST ORGAN = 'organ-root';
+    const ORGAN = 'organ-root';
 
     const BANK = 'organ-bank';
+
     const BANK_LIST = 'organ-bank-list';
+
     const BANK_CREATE = 'organ-bank-create';
+
     const BANK_SHOW = 'organ-bank-show';
+
     const BANK_EDIT = 'organ-bank-edit';
+
     const BANK_DELETE = 'organ-bank-delete';
 
     const DEPOSIT = 'organ-deposit';
+
     const DEPOSIT_LIST = 'organ-deposit-list';
+
     const DEPOSIT_CREATE = 'organ-deposit-create';
+
     const DEPOSIT_SHOW = 'organ-deposit-show';
+
     const DEPOSIT_EDIT = 'organ-deposit-edit';
+
     const DEPOSIT_DELETE = 'organ-deposit-delete';
 
     const PARENT_PERMISSIONS = [
@@ -25,7 +35,6 @@ class OrganPermissionKey
         self::BANK => 'دسترسی به بانک ها',
         self::DEPOSIT => 'دسترسی به حساب ها',
     ];
-
 
     const PERMISSIONS = [
         self::ORGAN => 'پنل سازمان',

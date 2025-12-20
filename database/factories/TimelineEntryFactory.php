@@ -30,9 +30,9 @@ class TimelineEntryFactory extends Factory
      */
     public function income(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'type' => \App\Models\TimelineEntry::TYPE_INCOME,
-            'title' => 'Sales to customer ' . $this->faker->name(),
+            'title' => 'Sales to customer '.$this->faker->name(),
         ]);
     }
 
@@ -41,7 +41,7 @@ class TimelineEntryFactory extends Factory
      */
     public function expense(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'type' => \App\Models\TimelineEntry::TYPE_EXPENSE,
             'title' => 'Purchase of raw materials',
         ]);

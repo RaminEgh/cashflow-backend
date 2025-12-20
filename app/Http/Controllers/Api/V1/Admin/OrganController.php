@@ -59,6 +59,7 @@ class OrganController extends Controller
             }
         }
         DB::commit();
+
         return Helper::successResponse(__('crud.d_created', ['source' => __('sources.organ'), 'name' => $organ->name]), new OrganResource($organ));
     }
 
@@ -70,7 +71,7 @@ class OrganController extends Controller
     public function allocation(Organ $organ, Request $request): JsonResponse
     {
         $allocation = $organ->allocations()
-            ->when($request->year, fn($query, $year) => $query->where('year', $year))
+            ->when($request->year, fn ($query, $year) => $query->where('year', $year))
             ->first();
 
         if (! $allocation) {
@@ -122,7 +123,7 @@ class OrganController extends Controller
         DB::beginTransaction();
         $organ->update([
             ...$request->validated(),
-            'updated_by' => auth()->id()
+            'updated_by' => auth()->id(),
         ]);
 
         if ($request->has('admins_id')) {
@@ -144,6 +145,7 @@ class OrganController extends Controller
             }
         }
         DB::commit();
+
         return Helper::successResponse(__('crud.d_updated', ['source' => __('sources.organ'), 'name' => $organ->name]), new OrganResource($organ));
     }
 

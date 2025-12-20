@@ -10,26 +10,26 @@ use Illuminate\Validation\ValidationException;
 class SettingService
 {
     protected string $cachePrefix = 'setting_';
+
     protected int $cacheTtl = 3600; // 1 hour
 
     /**
      * Get a setting value by key
      *
-     * @param string $key
-     * @param mixed $default
+     * @param  mixed  $default
      * @return mixed
      */
     public function get(string $key, $default = null)
     {
-        $cacheKey = $this->cachePrefix . $key;
-        
+        $cacheKey = $this->cachePrefix.$key;
+
         return Cache::remember($cacheKey, $this->cacheTtl, function () use ($key, $default) {
             $setting = Setting::where('key', $key)->first();
-            
-            if (!$setting) {
+
+            if (! $setting) {
                 return $default;
             }
-            
+
             return $this->castValue($setting->value);
         });
     }
@@ -37,74 +37,66 @@ class SettingService
     /**
      * Set a setting value
      *
-     * @param string $key
-     * @param mixed $value
-     * @return bool
+     * @param  mixed  $value
+     *
      * @throws ValidationException
      */
     public function set(string $key, $value): bool
     {
         $this->validateKey($key);
-        
+
         $serializedValue = $this->serializeValue($value);
-        
+
         $setting = Setting::updateOrCreate(
             ['key' => $key],
             ['value' => $serializedValue]
         );
-        
+
         if ($setting) {
             $this->clearCache($key);
+
             return true;
         }
-        
+
         return false;
     }
 
     /**
      * Get multiple settings at once
-     *
-     * @param array $keys
-     * @return array
      */
     public function getMultiple(array $keys): array
     {
         $result = [];
-        
+
         foreach ($keys as $key) {
             $result[$key] = $this->get($key);
         }
-        
+
         return $result;
     }
 
     /**
      * Set multiple settings at once
      *
-     * @param array $settings
-     * @return bool
      * @throws ValidationException
      */
     public function setMultiple(array $settings): bool
     {
         $this->validateKeys(array_keys($settings));
-        
+
         $success = true;
-        
+
         foreach ($settings as $key => $value) {
-            if (!$this->set($key, $value)) {
+            if (! $this->set($key, $value)) {
                 $success = false;
             }
         }
-        
+
         return $success;
     }
 
     /**
      * Check if a setting exists
-     *
-     * @param string $key
-     * @return bool
      */
     public function has(string $key): bool
     {
@@ -113,50 +105,44 @@ class SettingService
 
     /**
      * Delete a setting
-     *
-     * @param string $key
-     * @return bool
      */
     public function delete(string $key): bool
     {
         $deleted = Setting::where('key', $key)->delete();
-        
+
         if ($deleted) {
             $this->clearCache($key);
+
             return true;
         }
-        
+
         return false;
     }
 
     /**
      * Get all settings
-     *
-     * @return array
      */
     public function all(): array
     {
         return Cache::remember('all_settings', $this->cacheTtl, function () {
             $settings = Setting::all();
             $result = [];
-            
+
             foreach ($settings as $setting) {
                 $result[$setting->key] = $this->castValue($setting->value);
             }
-            
+
             return $result;
         });
     }
 
     /**
      * Clear all settings cache
-     *
-     * @return void
      */
     public function clearAllCache(): void
     {
         Cache::forget('all_settings');
-        
+
         // Clear individual setting caches
         $settings = Setting::pluck('key');
         foreach ($settings as $key) {
@@ -166,27 +152,23 @@ class SettingService
 
     /**
      * Clear cache for a specific setting
-     *
-     * @param string $key
-     * @return void
      */
     protected function clearCache(string $key): void
     {
-        Cache::forget($this->cachePrefix . $key);
+        Cache::forget($this->cachePrefix.$key);
     }
 
     /**
      * Validate setting key
      *
-     * @param string $key
      * @throws ValidationException
      */
     protected function validateKey(string $key): void
     {
         $validator = Validator::make(['key' => $key], [
-            'key' => 'required|string|max:255|regex:/^[a-zA-Z0-9._-]+$/'
+            'key' => 'required|string|max:255|regex:/^[a-zA-Z0-9._-]+$/',
         ]);
-        
+
         if ($validator->fails()) {
             throw new ValidationException($validator);
         }
@@ -195,7 +177,6 @@ class SettingService
     /**
      * Validate multiple setting keys
      *
-     * @param array $keys
      * @throws ValidationException
      */
     protected function validateKeys(array $keys): void
@@ -208,56 +189,51 @@ class SettingService
     /**
      * Serialize value for storage
      *
-     * @param mixed $value
-     * @return string
+     * @param  mixed  $value
      */
     protected function serializeValue($value): string
     {
         if (is_string($value)) {
             return $value;
         }
-        
+
         return json_encode($value);
     }
 
     /**
      * Cast value from storage
      *
-     * @param string $value
      * @return mixed
      */
     protected function castValue(string $value)
     {
         // Try to decode as JSON first
         $decoded = json_decode($value, true);
-        
+
         // If JSON decode was successful and didn't return null, use decoded value
         if (json_last_error() === JSON_ERROR_NONE && $decoded !== null) {
             return $decoded;
         }
-        
+
         // Otherwise return as string
         return $value;
     }
 
     /**
      * Get settings with a specific prefix
-     *
-     * @param string $prefix
-     * @return array
      */
     public function getByPrefix(string $prefix): array
     {
-        $cacheKey = 'settings_prefix_' . $prefix;
-        
+        $cacheKey = 'settings_prefix_'.$prefix;
+
         return Cache::remember($cacheKey, $this->cacheTtl, function () use ($prefix) {
-            $settings = Setting::where('key', 'like', $prefix . '%')->get();
+            $settings = Setting::where('key', 'like', $prefix.'%')->get();
             $result = [];
-            
+
             foreach ($settings as $setting) {
                 $result[$setting->key] = $this->castValue($setting->value);
             }
-            
+
             return $result;
         });
     }
@@ -265,24 +241,23 @@ class SettingService
     /**
      * Delete settings with a specific prefix
      *
-     * @param string $prefix
      * @return int Number of deleted settings
      */
     public function deleteByPrefix(string $prefix): int
     {
-        $settings = Setting::where('key', 'like', $prefix . '%')->get();
+        $settings = Setting::where('key', 'like', $prefix.'%')->get();
         $count = $settings->count();
-        
-        Setting::where('key', 'like', $prefix . '%')->delete();
-        
+
+        Setting::where('key', 'like', $prefix.'%')->delete();
+
         // Clear cache for deleted settings
         foreach ($settings as $setting) {
             $this->clearCache($setting->key);
         }
-        
-        Cache::forget('settings_prefix_' . $prefix);
+
+        Cache::forget('settings_prefix_'.$prefix);
         $this->clearAllCache();
-        
+
         return $count;
     }
 }

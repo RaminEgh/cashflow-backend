@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Admin\Deposit;
 
 use Illuminate\Foundation\Http\FormRequest;
-use function Psy\debug;
 
 class StoreDepositRequest extends FormRequest
 {

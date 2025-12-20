@@ -19,7 +19,7 @@ class AccessCollection extends ResourceCollection
             return [
                 'id' => $item->id,
                 'name' => $item->name,
-                'roles' => new RoleCollection($item->roles)
+                'roles' => new RoleCollection($item->roles),
             ];
         });
     }

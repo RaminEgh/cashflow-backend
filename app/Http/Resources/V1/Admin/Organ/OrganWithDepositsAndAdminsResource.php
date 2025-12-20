@@ -25,8 +25,8 @@ class OrganWithDepositsAndAdminsResource extends JsonResource
             'description' => $this->description,
             'admins_id' => UserResource::collection($this->admins),
             'deposits' => new DepositCollection($this->deposits),
-            'logo' => $this->logo ? url('/api/upload/' . $this->logo . '/display') : null,
-            'background' => $this->background ? url('/api/upload/' . $this->background . '/display') : null,
+            'logo' => $this->logo ? url('/api/upload/'.$this->logo.'/display') : null,
+            'background' => $this->background ? url('/api/upload/'.$this->background.'/display') : null,
         ];
     }
 }

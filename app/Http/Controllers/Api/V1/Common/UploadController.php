@@ -50,10 +50,10 @@ class UploadController extends Controller
 
         $perPage = $request->input('per_page', 15);
         $uploads = $query->paginate($perPage);
-        
+
         return Helper::successResponse(null, [
             'list' => UploadResource::collection($uploads),
-            'pagination' => new PaginationCollection($uploads)
+            'pagination' => new PaginationCollection($uploads),
         ]);
     }
 
@@ -128,6 +128,6 @@ class UploadController extends Controller
 
         return response($file, 200)
             ->header('Content-Type', $upload->mime_type)
-            ->header('Content-Disposition', 'inline; filename="' . $upload->original_name . '"');
+            ->header('Content-Disposition', 'inline; filename="'.$upload->original_name.'"');
     }
 }

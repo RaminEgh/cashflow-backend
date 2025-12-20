@@ -2,20 +2,18 @@
 
 namespace App\Events;
 
+use App\Models\User;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\Channel;
-use App\Models\User;
 
 class LoginEvent
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $user;
+
     /**
      * Create a new event instance.
      */

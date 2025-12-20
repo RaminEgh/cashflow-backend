@@ -12,7 +12,7 @@ class UserCollection extends ResourceCollection
      *
      * @return array<int|string, mixed>
      * @return array|\Illuminate\Contracts\Support\Arrayable|\JsonSerializable
- */
+     */
     public function toArray(Request $request)
     {
         return $this->collection->map(function ($item) {

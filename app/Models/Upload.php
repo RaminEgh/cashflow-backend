@@ -50,6 +50,7 @@ class Upload extends Model
                 // For public uploads, use direct storage URL if available
                 if ($this->is_private === self::PUBLIC_UPLOAD) {
                     $disk = $this->disk ?? 'public_uploads';
+
                     return Storage::disk($disk)->url($this->path);
                 }
 
@@ -70,7 +71,7 @@ class Upload extends Model
                     $bytes /= 1024;
                 }
 
-                return round($bytes, 2) . ' ' . $units[$i];
+                return round($bytes, 2).' '.$units[$i];
             }
         );
     }

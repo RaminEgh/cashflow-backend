@@ -25,7 +25,7 @@ class DepositResource extends JsonResource
             'type' => $this->type,
             'currency' => $this->currency,
             'description' => $this->description,
-            'bank' => new BankResource($this->bank)
+            'bank' => new BankResource($this->bank),
         ];
     }
 }

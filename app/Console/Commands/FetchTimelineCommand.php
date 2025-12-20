@@ -42,6 +42,7 @@ class FetchTimelineCommand extends Command
             $this->fetchForAllOrgans();
         } else {
             $this->error('Please specify --organ=slug or --all option');
+
             return 1;
         }
 
@@ -55,15 +56,16 @@ class FetchTimelineCommand extends Command
         try {
             $organ = \App\Models\Organ::where('slug', $organSlug)->first();
 
-            if (!$organ) {
+            if (! $organ) {
                 $this->error("Organ with slug '{$organSlug}' not found");
+
                 return;
             }
 
             $this->timelineFetchService->fetchAndStoreForOrgan($organ);
             $this->info("Timeline data fetched and saved successfully for organ: {$organSlug}");
         } catch (\Exception $e) {
-            $this->error("Failed to fetch timeline for organ '{$organSlug}': " . $e->getMessage());
+            $this->error("Failed to fetch timeline for organ '{$organSlug}': ".$e->getMessage());
         }
     }
 
@@ -75,7 +77,7 @@ class FetchTimelineCommand extends Command
             $this->timelineFetchService->fetchAndStore();
             $this->info('Timeline data fetched and saved successfully for all organizations!');
         } catch (\Exception $e) {
-            $this->error('Failed to fetch timeline data: ' . $e->getMessage());
+            $this->error('Failed to fetch timeline data: '.$e->getMessage());
         }
     }
 }

@@ -24,7 +24,8 @@ class Bank extends Model
         'updated_by',
     ];
 
-    public function deposits(): HasMany {
+    public function deposits(): HasMany
+    {
         return $this->hasMany(Deposit::class);
     }
 

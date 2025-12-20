@@ -19,7 +19,7 @@ class UserLogResource extends JsonResource
             'last_activity' => $this->last_activity,
             'user_agent' => $this->user_agent,
             'description' => $this->description,
-            'type' => $this->type
+            'type' => $this->type,
         ];
     }
 }

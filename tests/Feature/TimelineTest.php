@@ -32,8 +32,8 @@ it('can fetch timeline data for an organization', function () {
                     'organ',
                     'created_at',
                     'updated_at',
-                ]
-            ]
+                ],
+            ],
         ]);
 
     expect($response->json('data'))->toHaveCount(5);
@@ -56,15 +56,15 @@ it('can filter timeline by type', function () {
 it('can filter timeline by date range', function () {
     TimelineEntry::factory()->create([
         'organ_id' => $this->organ->id,
-        'date' => '2024-01-15'
+        'date' => '2024-01-15',
     ]);
     TimelineEntry::factory()->create([
         'organ_id' => $this->organ->id,
-        'date' => '2024-02-15'
+        'date' => '2024-02-15',
     ]);
     TimelineEntry::factory()->create([
         'organ_id' => $this->organ->id,
-        'date' => '2024-03-15'
+        'date' => '2024-03-15',
     ]);
 
     $response = $this->getJson("/api/timeline/{$this->organ->id}?date_from=2024-02-01&date_to=2024-02-28");
@@ -83,11 +83,11 @@ it('returns error when organization is not found', function () {
 it('can get timeline summary statistics', function () {
     TimelineEntry::factory()->income()->count(3)->create([
         'organ_id' => $this->organ->id,
-        'amount' => 1000000
+        'amount' => 1000000,
     ]);
     TimelineEntry::factory()->expense()->count(2)->create([
         'organ_id' => $this->organ->id,
-        'amount' => 500000
+        'amount' => 500000,
     ]);
 
     $response = $this->getJson("/api/timeline/{$this->organ->id}/summary");
@@ -100,8 +100,8 @@ it('can get timeline summary statistics', function () {
                 'organ_slug',
                 'summary',
                 'total_transactions',
-                'total_amount'
-            ]
+                'total_amount',
+            ],
         ]);
 
     $data = $response->json('data');
@@ -118,19 +118,19 @@ it('can refresh timeline data from external api', function () {
             'type' => 'daryaftani',
             'title' => 'فروش کالا به مشتری X',
             'date' => '2025-10-01',
-            'amount' => 35000000
+            'amount' => 35000000,
         ],
         [
             'type' => 'pardakhtani',
             'title' => 'خرید مواد اولیه',
             'date' => '2025-09-28',
-            'amount' => 12000000
-        ]
+            'amount' => 12000000,
+        ],
     ];
 
     // Mock the HTTP client
     Http::fake([
-        "http://5.160.184.51:5200/timeline/{$this->organ->slug}" => Http::response($mockData)
+        "http://5.160.184.51:5200/timeline/{$this->organ->slug}" => Http::response($mockData),
     ]);
 
     $response = $this->postJson("/api/timeline/{$this->organ->id}/refresh");
@@ -151,17 +151,17 @@ it('can get timeline data grouped by date', function () {
     TimelineEntry::factory()->income()->create([
         'organ_id' => $this->organ->id,
         'date' => '2024-01-15',
-        'amount' => 1000000
+        'amount' => 1000000,
     ]);
     TimelineEntry::factory()->expense()->create([
         'organ_id' => $this->organ->id,
         'date' => '2024-01-15',
-        'amount' => 500000
+        'amount' => 500000,
     ]);
     TimelineEntry::factory()->income()->create([
         'organ_id' => $this->organ->id,
         'date' => '2024-01-16',
-        'amount' => 2000000
+        'amount' => 2000000,
     ]);
 
     $response = $this->getJson("/api/timeline/grouped/{$this->organ->id}?date_from=2024-01-01&date_to=2024-12-31");
@@ -172,8 +172,8 @@ it('can get timeline data grouped by date', function () {
                 'organ',
                 'grouped_timeline',
                 'total_entries',
-                'date_range'
-            ]
+                'date_range',
+            ],
         ]);
 
     $data = $response->json('data');
@@ -199,7 +199,7 @@ it('can get timeline data grouped by date', function () {
 
 it('handles external api errors gracefully', function () {
     Http::fake([
-        "http://5.160.184.51:5200/timeline/{$this->organ->slug}" => Http::response([], 500)
+        "http://5.160.184.51:5200/timeline/{$this->organ->slug}" => Http::response([], 500),
     ]);
 
     $response = $this->postJson("/api/timeline/{$this->organ->id}/refresh");

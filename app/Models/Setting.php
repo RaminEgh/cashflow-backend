@@ -20,19 +20,19 @@ class Setting extends Model
     /**
      * Get the value attribute with automatic type casting
      *
-     * @param string $value
+     * @param  string  $value
      * @return mixed
      */
     public function getValueAttribute($value)
     {
         // Try to decode as JSON first
         $decoded = json_decode($value, true);
-        
+
         // If JSON decode was successful and didn't return null, use decoded value
         if (json_last_error() === JSON_ERROR_NONE && $decoded !== null) {
             return $decoded;
         }
-        
+
         // Otherwise return as string
         return $value;
     }
@@ -40,7 +40,7 @@ class Setting extends Model
     /**
      * Set the value attribute with automatic serialization
      *
-     * @param mixed $value
+     * @param  mixed  $value
      * @return void
      */
     public function setValueAttribute($value)
@@ -55,20 +55,16 @@ class Setting extends Model
     /**
      * Scope to get settings by prefix
      *
-     * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $prefix
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeByPrefix($query, string $prefix)
     {
-        return $query->where('key', 'like', $prefix . '%');
+        return $query->where('key', 'like', $prefix.'%');
     }
 
     /**
      * Find setting by key
-     *
-     * @param string $key
-     * @return Setting|null
      */
     public static function findByKey(string $key): ?Setting
     {
@@ -78,22 +74,20 @@ class Setting extends Model
     /**
      * Get setting value by key
      *
-     * @param string $key
-     * @param mixed $default
+     * @param  mixed  $default
      * @return mixed
      */
     public static function getValue(string $key, $default = null)
     {
         $setting = static::findByKey($key);
+
         return $setting ? $setting->value : $default;
     }
 
     /**
      * Set setting value by key
      *
-     * @param string $key
-     * @param mixed $value
-     * @return bool
+     * @param  mixed  $value
      */
     public static function setValue(string $key, $value): bool
     {

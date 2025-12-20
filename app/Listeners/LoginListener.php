@@ -3,10 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\LoginEvent;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\DB;
-
 
 class LoginListener
 {
@@ -22,7 +19,6 @@ class LoginListener
 
     /**
      * Handle the event.
-     * @param LoginEvent $event
      */
     public function handle(LoginEvent $event): void
     {

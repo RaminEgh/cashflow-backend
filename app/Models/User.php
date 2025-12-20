@@ -3,45 +3,35 @@
 namespace App\Models;
 
 use App\Constants\CacheKey;
+use App\Enums\UserStatus;
+use App\Enums\UserType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\Cache;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
-    const TYPE_UNKNOWN = 0;
-    const TYPE_ADMIN = 1;
-    const TYPE_ORGAN = 2;
-    const TYPE_GENERAL = 3;
+    // Backward compatibility constants - use UserType and UserStatus enums instead
+    public const TYPE_UNKNOWN = 0;
 
-    const TYPES = ['unknown' => self::TYPE_UNKNOWN, 'admin' => self::TYPE_ADMIN, 'organ' => self::TYPE_ORGAN, 'general' => self::TYPE_GENERAL,];
+    public const TYPE_ADMIN = 1;
 
+    public const TYPE_ORGAN = 2;
 
-    const STATUS_INACTIVE = 0;
-    const STATUS_ACTIVE = 1;
-    const STATUS_BLOCKED = 2;
+    public const TYPE_GENERAL = 3;
 
-    const STATUSES_KEY_VALUE = [
-        [
-            "id" => self::STATUS_INACTIVE,
-            "name" => "Inactive",
-        ],
-        [
-            "id" => self::STATUS_ACTIVE,
-            "name" => "Active",
-        ],
-        [
-            "id" => self::STATUS_BLOCKED,
-            "name" => "Blocked",
-        ]
-    ];
+    public const STATUS_INACTIVE = 0;
+
+    public const STATUS_ACTIVE = 1;
+
+    public const STATUS_BLOCKED = 2;
 
     /**
      * The attributes that are mass assignable.
@@ -49,7 +39,6 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $guarded = ['id', 'created_at'];
-
 
     /**
      * The attributes that should be hidden for serialization.
@@ -61,7 +50,6 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-
     protected $appends = ['name'];
 
     protected function getNameAttribute(): string
@@ -71,30 +59,16 @@ class User extends Authenticatable
 
     public function getTypeName(): string
     {
-        switch ($this->type) {
-            case self::TYPE_ADMIN:
-                return 'admin';
-            case self::TYPE_ORGAN:
-                return 'organ';
-            case self::TYPE_GENERAL:
-                return 'general';
-            default:
-                return 'unknown';
-        }
+        $type = $this->type instanceof UserType ? $this->type : UserType::from($this->type ?? 0);
+
+        return $type->name();
     }
 
     public function getStatusName(): string
     {
-        switch ($this->status) {
-            case self::STATUS_ACTIVE:
-                return 'active';
-            case self::STATUS_INACTIVE:
-                return 'inactive';
-            case self::STATUS_BLOCKED:
-                return 'blocked';
-            default:
-                return 'unknown';
-        }
+        $status = $this->status instanceof UserStatus ? $this->status : UserStatus::from($this->status ?? 0);
+
+        return $status->name();
     }
 
     /**
@@ -106,7 +80,10 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'logged_at' => 'datetime',
             'password' => 'hashed',
+            'type' => UserType::class,
+            'status' => UserStatus::class,
         ];
     }
 
@@ -156,8 +133,8 @@ class User extends Authenticatable
         });
     }
 
-
-    public function sessions(): HasMany {
+    public function sessions(): HasMany
+    {
         return $this->hasMany(UserSession::class);
     }
 
@@ -165,5 +142,4 @@ class User extends Authenticatable
     {
         return $this->hasMany(Upload::class);
     }
-
 }

@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\V1\Common\PaginationCollection;
 use App\Http\Resources\V1\Timeline\TimelineEntryCollection;
 use App\Http\Resources\V1\Timeline\TimelineEntryResource;
 use App\Http\Resources\V1\Timeline\TimelineGroupedResource;
-use App\Http\Resources\V1\Common\PaginationCollection;
 use App\Models\Organ;
 use App\Models\TimelineEntry;
 use App\Services\Rahkaran\TimelineFetchService;
@@ -47,14 +47,16 @@ class TimelineController extends Controller
         // Check if pagination is requested
         if ($request->has('per_page') || $request->has('page')) {
             $timelines = $query->paginate($request->per_page ?? 15);
+
             return Helper::successResponse(null, [
                 'list' => new TimelineEntryCollection($timelines),
-                'pagination' => new PaginationCollection($timelines)
+                'pagination' => new PaginationCollection($timelines),
             ]);
         }
 
         // Return all results without pagination
         $timelines = $query->get();
+
         return Helper::successResponse(null, TimelineEntryResource::collection($timelines));
     }
 
@@ -73,7 +75,7 @@ class TimelineController extends Controller
 
             return Helper::successResponse('Timeline data refreshed successfully', TimelineEntryResource::collection($timelines));
         } catch (\Exception $e) {
-            return Helper::errorResponse('Failed to refresh timeline data: ' . $e->getMessage(), [], 500);
+            return Helper::errorResponse('Failed to refresh timeline data: '.$e->getMessage(), [], 500);
         }
     }
 
@@ -95,7 +97,7 @@ class TimelineController extends Controller
         $dateFrom = $request->get('date_from');
         $dateTo = $request->get('date_to');
 
-        if (!$dateFrom && !$dateTo) {
+        if (! $dateFrom && ! $dateTo) {
             $currentJalaliYear = Verta::now()->year;
             $dateFrom = Verta::parse(sprintf('%04d/%02d/%02d', $currentJalaliYear, 1, 1))->datetime()->format('Y-m-d');
             $dateTo = Verta::parse(sprintf('%04d/%02d/%02d', $currentJalaliYear, 12, 29))->datetime()->format('Y-m-d');
@@ -169,6 +171,7 @@ class TimelineController extends Controller
 
         return $result;
     }
+
     public function summary(Organ $organ): JsonResponse
     {
         $summary = TimelineEntry::where('organ_id', $organ->id)
@@ -190,7 +193,7 @@ class TimelineController extends Controller
             'organ_slug' => $organ->slug,
             'summary' => $summary,
             'total_transactions' => $summary->sum('count'),
-            'total_amount' => $summary->sum('total_amount')
+            'total_amount' => $summary->sum('total_amount'),
         ]);
     }
 }

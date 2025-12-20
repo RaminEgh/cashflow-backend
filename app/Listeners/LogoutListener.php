@@ -3,8 +3,6 @@
 namespace App\Listeners;
 
 use App\Events\LogoutEvent;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\DB;
 
 class LogoutListener
@@ -24,13 +22,13 @@ class LogoutListener
      */
     public function handle(LogoutEvent $event): void
     {
-//        DB::table('user_sessions')->insert([
-//            'user_id' => $user->id,
-//            'ip_address' => $request->ip(),
-//            'user_agent' => $request->userAgent(),
-//            'description' => 'خروج',
-//            'type' => 1,
-//            'last_activity' => now()->timestamp,
-//        ]);
+        //        DB::table('user_sessions')->insert([
+        //            'user_id' => $user->id,
+        //            'ip_address' => $request->ip(),
+        //            'user_agent' => $request->userAgent(),
+        //            'description' => 'خروج',
+        //            'type' => 1,
+        //            'last_activity' => now()->timestamp,
+        //        ]);
     }
 }

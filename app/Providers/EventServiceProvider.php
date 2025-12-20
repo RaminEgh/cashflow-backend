@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
-
 class EventServiceProvider extends ServiceProvider
 {
     /**
@@ -12,8 +11,6 @@ class EventServiceProvider extends ServiceProvider
      *
      * @var array<class-string, array<int, class-string>>
      */
-
-
     protected $listen = [
         \App\Events\LoginEvent::class => [
             \App\Listeners\LoginListener::class,
@@ -23,14 +20,10 @@ class EventServiceProvider extends ServiceProvider
         ],
     ];
 
-
     /**
      * Register any events for your application.
      */
-    public function boot(): void
-    {
-
-    }
+    public function boot(): void {}
 
     /**
      * Determine if events and listeners should be automatically discovered.

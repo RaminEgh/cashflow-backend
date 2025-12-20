@@ -13,6 +13,7 @@ class Organ extends Model
 {
     /** @use HasFactory<\Database\Factories\OrganFactory> */
     use HasFactory, HasSlug;
+
     protected $guarded = ['id'];
 
     public function admins(): BelongsToMany

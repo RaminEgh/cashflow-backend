@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources\V1\Admin\Allocation;
 
+use App\Http\Resources\V1\Admin\Organ\OrganResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
-use App\Http\Resources\V1\Admin\Organ\OrganResource;
 
 class AllocationListCollection extends ResourceCollection
 {

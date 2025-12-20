@@ -29,7 +29,7 @@ class UpdateDepositsBalanceSeeder extends Seeder
         }
 
         $this->command->info('Updating deposits balances...');
-        $this->command->line('Deposits with difference: ' . implode(', ', $depositsWithDifference));
+        $this->command->line('Deposits with difference: '.implode(', ', $depositsWithDifference));
 
         $updated = 0;
 

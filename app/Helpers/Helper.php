@@ -9,37 +9,34 @@ class Helper
     /**
      * Return a success response.
      *
-     * @param string $message
-     * @param array $data
-     * @param int $status
-     * @return JsonResponse
+     * @param  string  $message
+     * @param  array  $data
+     * @param  int  $status
      */
     public static function successResponse($message, $data = [], $status = 200): JsonResponse
     {
         return response()->json([
             'success' => true,
             'message' => $message,
-            'data' => $data
+            'data' => $data,
         ], $status);
     }
 
     /**
      * Return an error response.
      *
-     * @param string $message
-     * @param array $data
-     * @param int $status
-     * @return JsonResponse
+     * @param  string  $message
+     * @param  array  $data
+     * @param  int  $status
      */
     public static function errorResponse($message, $data = [], $status = 400): JsonResponse
     {
         return response()->json([
             'success' => false,
             'message' => $message,
-            'data' => $data
+            'data' => $data,
         ], $status);
     }
-
 
     public static function persianToLatin($string): string
     {
@@ -57,8 +54,7 @@ class Helper
     /**
      * Get a setting value
      *
-     * @param string $key
-     * @param mixed $default
+     * @param  mixed  $default
      * @return mixed
      */
     public static function setting(string $key, $default = null)

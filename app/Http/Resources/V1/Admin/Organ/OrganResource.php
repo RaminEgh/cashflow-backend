@@ -21,7 +21,7 @@ class OrganResource extends JsonResource
             'slug' => $this->slug,
             'phone' => $this->phone,
             'description' => $this->description,
-            'logo' => url('storage/' . $this->logo),
+            'logo' => url('storage/'.$this->logo),
             'background' => $this->background,
         ];
     }

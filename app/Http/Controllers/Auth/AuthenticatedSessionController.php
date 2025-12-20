@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\UserStatus;
+use App\Enums\UserType;
 use App\Events\LogoutEvent;
 use App\Helpers\Helper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\V1\Admin\Permission\PermissionCollection;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -30,15 +34,15 @@ class AuthenticatedSessionController extends Controller
                 return Helper::errorResponse(__('auth.failed'), null, 403);
             }
 
-            if (! Hash::check($validated['password'], $user->password) || ($user->status !== User::STATUS_INACTIVE && $user->status !== User::STATUS_ACTIVE)) {
+            if (! Hash::check($validated['password'], $user->password) || ($user->status !== UserStatus::Inactive && $user->status !== UserStatus::Active)) {
                 return Helper::errorResponse(__('auth.failed'), null, 403);
             }
 
-            if ($user->type === User::TYPE_UNKNOWN) {
-                $user->type = User::TYPE_GENERAL;
+            if ($user->type === UserType::Unknown) {
+                $user->type = UserType::General;
             }
-            if ($user->status === User::STATUS_INACTIVE) {
-                $user->status = User::STATUS_ACTIVE;
+            if ($user->status === UserStatus::Inactive) {
+                $user->status = UserStatus::Active;
             }
             $user->logged_at = now();
             $user->save();
@@ -100,6 +104,29 @@ class AuthenticatedSessionController extends Controller
             return response()->json([
                 'message' => 'Error during logout',
             ], 500);
+        }
+    }
+
+    /**
+     * Handle a password change request.
+     */
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            $user->update([
+                'password' => Hash::make($request->string('password')),
+            ]);
+
+            return Helper::successResponse(__('auth.password_changed'));
+        } catch (\Exception $e) {
+            Log::error('Password change failed', [
+                'error' => $e->getMessage(),
+                'user_id' => $request->user()->id,
+            ]);
+
+            return Helper::errorResponse(__('auth.password_change_failed'), null, 500);
         }
     }
 }

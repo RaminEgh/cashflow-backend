@@ -7,7 +7,10 @@ This document summarizes the public API surface. All routes below are prefixed w
 - Public: `GET /` (web) returns Laravel version
 - Public: `GET /api/test` sample response
 - Public: `POST /api/debug` sample response
-- Authenticated: `GET /api/user` current user
+- Authenticated: `GET /api/user` current user profile with roles and permissions
+  - Returns: user data (name, email, phone, type, status, logged_at, etc.), roles (with permissions), and all user permissions
+- Authenticated: `POST /api/auth/change-password` change user password
+  - Body: `{ "current_password": "...", "password": "...", "password_confirmation": "..." }`
 
 ## Settings (Authenticated)
 

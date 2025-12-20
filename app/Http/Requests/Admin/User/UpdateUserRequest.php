@@ -27,7 +27,7 @@ class UpdateUserRequest extends FormRequest
             'first_name' => 'required|min:3|max:64',
             'last_name' => 'required|min:3|max:64',
             'phone' => ['required', 'string', 'min:11', 'max:13', new IranMobileRule],
-            'status' => 'required|in:' . implode(',', User::STATUSES),
+            'status' => 'required|in:'.implode(',', User::STATUSES),
             'national_code' => 'nullable|string|min:10|max:10',
             'email' => 'nullable|email',
         ];

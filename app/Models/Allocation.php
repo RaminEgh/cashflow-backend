@@ -9,7 +9,8 @@ class Allocation extends Model
 {
     protected $guarded = ['id'];
 
-    public function organ(): BelongsTo {
+    public function organ(): BelongsTo
+    {
         return $this->belongsTo(Organ::class);
     }
 }

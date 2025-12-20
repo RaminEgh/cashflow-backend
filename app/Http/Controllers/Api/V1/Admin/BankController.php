@@ -17,12 +17,12 @@ class BankController extends Controller
     public function index(): JsonResponse
     {
         $banks = Bank::paginate($request->per_page ?? 10);
+
         return Helper::successResponse(null, [
-            'list' =>  BankResource::collection($banks),
-            'pagination' => new PaginationCollection($banks)
+            'list' => BankResource::collection($banks),
+            'pagination' => new PaginationCollection($banks),
         ]);
     }
-
 
     public function store(StoreBankRequest $request): JsonResponse
     {
@@ -38,12 +38,10 @@ class BankController extends Controller
         return Helper::successResponse(__('crud.d_created', ['source' => __('sources.bank'), 'name' => $bank->name]), new BankResource($bank));
     }
 
-
     public function show(Bank $bank): JsonResponse
     {
         return Helper::successResponse('', new BankResource($bank));
     }
-
 
     public function update(UpdateBankRequest $request, Bank $bank)
     {

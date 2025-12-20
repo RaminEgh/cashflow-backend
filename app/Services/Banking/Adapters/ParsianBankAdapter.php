@@ -54,7 +54,7 @@ class ParsianBankAdapter implements BankAdapterInterface
             Log::debug('Using cached Parsian Bank token', [
                 'environment' => $environment,
                 'cache_key' => $cacheKey,
-                'token_preview' => substr($cachedToken, 0, 20) . '...',
+                'token_preview' => substr($cachedToken, 0, 20).'...',
             ]);
 
             return $cachedToken;
@@ -186,7 +186,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'fallback_error' => $e->getMessage(),
             ]);
 
-            throw new \Exception('Failed to authenticate with Parsian Bank - connection error: ' . $e->getMessage());
+            throw new \Exception('Failed to authenticate with Parsian Bank - connection error: '.$e->getMessage());
         } catch (\Exception $e) {
             Log::error('Failed to authenticate with Parsian Bank', [
                 'primary_url' => $authUrl,
@@ -200,7 +200,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 throw $e;
             }
 
-            throw new \Exception('Failed to authenticate with Parsian Bank: ' . $e->getMessage());
+            throw new \Exception('Failed to authenticate with Parsian Bank: '.$e->getMessage());
         }
     }
 
@@ -222,7 +222,7 @@ class ParsianBankAdapter implements BankAdapterInterface
         $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? throw new \Exception('Account number is required');
 
         // Service name is camelCase, no URL encoding needed
-        $url = $this->apiEndpoint . '/' . self::SERVICE_GET_ACCOUNT_BALANCE;
+        $url = $this->apiEndpoint.'/'.self::SERVICE_GET_ACCOUNT_BALANCE;
 
         Log::info('Fetching balance from Parsian Bank', [
             'accountNumber' => $accountNumber,
@@ -234,7 +234,7 @@ class ParsianBankAdapter implements BankAdapterInterface
         try {
             $response = Http::timeout(30)
                 ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->token,
+                    'Authorization' => 'Bearer '.$this->token,
                     'Content-Type' => 'application/json',
                 ])->post($url, [
                     'accountNumber' => $accountNumber,
@@ -246,7 +246,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'error' => $e->getMessage(),
             ]);
 
-            throw new \Exception('Connection timeout or error when fetching balance from Parsian Bank: ' . $e->getMessage());
+            throw new \Exception('Connection timeout or error when fetching balance from Parsian Bank: '.$e->getMessage());
         }
 
         if (! $response->successful()) {
@@ -322,10 +322,10 @@ class ParsianBankAdapter implements BankAdapterInterface
     {
         $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? throw new \Exception('Account number is required');
 
-        $url = $this->apiEndpoint . '/' . self::SERVICE_GET_ACCOUNT_BALANCE;
+        $url = $this->apiEndpoint.'/'.self::SERVICE_GET_ACCOUNT_BALANCE;
 
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->token,
+            'Authorization' => 'Bearer '.$this->token,
             'Content-Type' => 'application/json',
         ])->post($url, [
             'accountNumber' => $accountNumber,
@@ -345,7 +345,7 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         // Check for ChAccountNotFoundException or similar
         if (isset($data['exception']) || (isset($data['error']) && str_contains(strtolower($data['error']), 'account not found'))) {
-            throw new \Exception('Account not found: ' . $accountNumber);
+            throw new \Exception('Account not found: '.$accountNumber);
         }
 
         if (! isset($data['balance'])) {

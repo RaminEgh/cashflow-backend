@@ -7,7 +7,8 @@ use Illuminate\Console\Command;
 
 class FetchOrgansFromRahkaranCommand extends Command
 {
-    public function __construct(protected OrganizationFetchService $organizationFetchService) {
+    public function __construct(protected OrganizationFetchService $organizationFetchService)
+    {
         parent::__construct();
     }
 
@@ -36,7 +37,7 @@ class FetchOrgansFromRahkaranCommand extends Command
             $this->organizationFetchService->fetchAndStore();
             $this->info('Organizations fetched and saved successfully.');
         } catch (\Exception $e) {
-            $this->error('Failed: ' . $e->getMessage());
+            $this->error('Failed: '.$e->getMessage());
         }
 
         $this->info('All balance update jobs have been dispatched successfully!');

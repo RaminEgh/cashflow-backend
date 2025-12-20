@@ -28,7 +28,7 @@ class TimelineFetchService
                 $this->fetchAndStoreForOrgan($organ);
                 Log::info("Timeline data fetched successfully for organ: {$organ->slug}");
             } catch (\Exception $e) {
-                Log::error("Failed to fetch timeline for organ {$organ->slug}: " . $e->getMessage());
+                Log::error("Failed to fetch timeline for organ {$organ->slug}: ".$e->getMessage());
             }
         }
     }
@@ -40,14 +40,15 @@ class TimelineFetchService
     {
         $response = Http::timeout(30)->get("{$this->baseUrl}/timeline/{$organ->slug}");
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             throw new \Exception("Failed to fetch timeline data for organ: {$organ->slug}. Status: {$response->status()}");
         }
 
         $timelineData = $response->json();
 
-        if (!is_array($timelineData)) {
+        if (! is_array($timelineData)) {
             Log::warning("Invalid timeline data format for organ: {$organ->slug}");
+
             return;
         }
 
@@ -56,7 +57,7 @@ class TimelineFetchService
             $this->storeTimelineEntry($organ, $item);
         }
 
-        Log::info("Stored " . count($timelineData) . " timeline entries for organ: {$organ->slug}");
+        Log::info('Stored '.count($timelineData)." timeline entries for organ: {$organ->slug}");
     }
 
     /**
@@ -65,8 +66,9 @@ class TimelineFetchService
     private function storeTimelineEntry(Organ $organ, array $item): void
     {
         // Validate required fields
-        if (!isset($item['type'], $item['title'], $item['date'], $item['amount'])) {
-            Log::warning("Invalid timeline entry format", ['item' => $item]);
+        if (! isset($item['type'], $item['title'], $item['date'], $item['amount'])) {
+            Log::warning('Invalid timeline entry format', ['item' => $item]);
+
             return;
         }
 
@@ -77,8 +79,9 @@ class TimelineFetchService
         ];
 
         $englishType = $typeMapping[$item['type']] ?? null;
-        if (!$englishType) {
+        if (! $englishType) {
             Log::warning("Invalid timeline entry type: {$item['type']}");
+
             return;
         }
 
@@ -98,7 +101,7 @@ class TimelineFetchService
     {
         $response = Http::timeout(30)->get("{$this->baseUrl}/timeline/{$organ->slug}");
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             throw new \Exception("Failed to fetch timeline data for organ: {$organ->slug}. Status: {$response->status()}");
         }
 

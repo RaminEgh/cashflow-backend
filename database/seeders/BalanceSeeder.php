@@ -112,7 +112,7 @@ class BalanceSeeder extends Seeder
                 $totalCreated += count($chunk);
             }
 
-            $this->command->line('  Created ' . count($balancesToInsert) . " balance records for deposit ID: {$deposit->id}");
+            $this->command->line('  Created '.count($balancesToInsert)." balance records for deposit ID: {$deposit->id}");
         }
 
         $this->command->info("Total balance records created: {$totalCreated}");

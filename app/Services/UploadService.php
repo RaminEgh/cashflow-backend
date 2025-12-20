@@ -64,8 +64,8 @@ class UploadService
             return null;
         }
 
-        $zipFileName = 'uploads-' . now()->format('Y-m-d-His') . '.zip';
-        $zipPath = storage_path('app/temp/' . $zipFileName);
+        $zipFileName = 'uploads-'.now()->format('Y-m-d-His').'.zip';
+        $zipPath = storage_path('app/temp/'.$zipFileName);
 
         if (! file_exists(storage_path('app/temp'))) {
             mkdir(storage_path('app/temp'), 0755, true);
@@ -121,13 +121,13 @@ class UploadService
 
     protected function generateFileName(UploadedFile $file): string
     {
-        return Str::uuid() . '.' . $file->getClientOriginalExtension();
+        return Str::uuid().'.'.$file->getClientOriginalExtension();
     }
 
     protected function generateUniqueSlug(): string
     {
         do {
-            $slug = Str::slug(now()->format('Y-m-d') . '-' . Str::random(8));
+            $slug = Str::slug(now()->format('Y-m-d').'-'.Str::random(8));
         } while (Upload::where('slug', $slug)->exists());
 
         return $slug;
@@ -135,7 +135,7 @@ class UploadService
 
     protected function getStoragePath(int $userId): string
     {
-        return now()->format('Y/m') . '/' . $userId;
+        return now()->format('Y/m').'/'.$userId;
     }
 
     protected function formatBytes(int $bytes, int $precision = 2): string
@@ -146,7 +146,7 @@ class UploadService
             $bytes /= 1024;
         }
 
-        return round($bytes, $precision) . ' ' . $units[$i];
+        return round($bytes, $precision).' '.$units[$i];
     }
 
     public function cleanupTempFiles(): void
@@ -157,7 +157,7 @@ class UploadService
             return;
         }
 
-        $files = glob($tempPath . '/*.zip');
+        $files = glob($tempPath.'/*.zip');
         $now = time();
 
         foreach ($files as $file) {

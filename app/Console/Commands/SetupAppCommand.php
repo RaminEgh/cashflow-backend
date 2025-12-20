@@ -35,7 +35,7 @@ class SetupAppCommand extends Command
             Storage::disk('private_uploads')->makeDirectory('/');
             $this->call('storage:link');
             $this->info('Storage directories and symlink created!');
-            if (!Schema::hasTable('cache')) {
+            if (! Schema::hasTable('cache')) {
                 $this->call('migrate:fresh');
                 $this->call('db:seed');
                 $this->call('app:fetch-organs');
@@ -46,9 +46,11 @@ class SetupAppCommand extends Command
             $this->info('setup finished...');
         } catch (\Throwable $e) {
             DB::rollBack();
-            $this->error('Error occurred: ' . $e->getMessage());
+            $this->error('Error occurred: '.$e->getMessage());
+
             return 1;
         }
+
         return 0;
     }
 }

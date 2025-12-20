@@ -67,7 +67,7 @@ class DepositFetchService
                     }
                 }
             } catch (\Throwable $e) {
-                Log::error("Error fetching/storing deposits for organ {$organ->slug}: " . $e->getMessage());
+                Log::error("Error fetching/storing deposits for organ {$organ->slug}: ".$e->getMessage());
 
                 continue;
             }

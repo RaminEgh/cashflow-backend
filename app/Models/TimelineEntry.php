@@ -12,6 +12,7 @@ class TimelineEntry extends Model
     use HasFactory;
 
     const TYPE_INCOME = 'income';
+
     const TYPE_EXPENSE = 'expense';
 
     const TYPES = [

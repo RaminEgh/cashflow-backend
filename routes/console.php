@@ -8,7 +8,7 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('app:update-balances')->daily();
+Schedule::command('app:update-balances')->dailyAt('06:00');
 
 // Horizon metrics snapshot (runs every minute for real-time metrics)
 Schedule::command('horizon:snapshot')->everyMinute();

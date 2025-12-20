@@ -8,17 +8,17 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        api: __DIR__.'/../routes/api.php',
-        web: __DIR__.'/../routes/web.php',
-        commands: __DIR__.'/../routes/console.php',
+        api: __DIR__ . '/../routes/api.php',
+        web: __DIR__ . '/../routes/web.php',
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
         // Trust proxies only in production (for HTTPS detection behind reverse proxy)
         // On localhost, don't trust proxies to avoid redirect issues
-        // if (app()->environment('production')) {
-        //     $middleware->trustProxies(at: '*');
-        // }
+        if (app()->environment('production')) {
+            $middleware->trustProxies(at: '*');
+        }
 
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,

@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -82,7 +83,11 @@ class AuthenticatedSessionController extends Controller
 
             event(new LogoutEvent($user));
 
-            $request->user()->currentAccessToken()->delete();
+            // Only delete token if it's a database token (not a TransientToken from stateful auth)
+            $token = $request->user()->currentAccessToken();
+            if ($token instanceof PersonalAccessToken) {
+                $token->delete();
+            }
 
             DB::table('user_sessions')->insert([
                 'user_id' => $user->id,

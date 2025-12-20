@@ -36,5 +36,13 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Redirect unauthenticated users to Horizon login when accessing Horizon
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+            if ($request->is('horizon*') || $request->is('horizon/*')) {
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => 'Unauthenticated.'], 401);
+                }
+                return redirect()->route('horizon.login.show');
+            }
+        });
     })->create();

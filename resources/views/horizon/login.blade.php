@@ -146,7 +146,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('horizon.login') }}">
+        <form method="POST" action="{{ url(route('horizon.login', [], false)) }}">
             @csrf
 
             <div class="form-group">

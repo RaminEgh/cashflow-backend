@@ -42,7 +42,7 @@ class BalanceFetchService
             try {
                 $this->fetchAndStoreForDeposit($deposit);
             } catch (\Throwable $e) {
-                Log::error("Error fetching/storing balance for deposit {$deposit->number}: ".$e->getMessage(), [
+                Log::error("Error fetching/storing balance for deposit {$deposit->number}: " . $e->getMessage(), [
                     'deposit_id' => $deposit->id,
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
@@ -59,9 +59,15 @@ class BalanceFetchService
     public function fetchAndStoreForDeposit(Deposit $deposit): void
     {
         try {
+            // Ensure organ relationship is loaded
+            if (! $deposit->relationLoaded('organ')) {
+                $deposit->load('organ');
+            }
+
             $adapter = $this->bankAdapterFactory->make('parsian');
             $balanceData = $adapter->setAccount([
                 'accountNumber' => $deposit->number,
+                'organSlug' => $deposit->organ?->slug,
             ])->getAccountBalance();
 
             $balance = (int) $balanceData['balance'];

@@ -23,6 +23,13 @@ class ParsianBankAdapter implements BankAdapterInterface
     {
         $this->credentials = $credentials;
         $this->organSlug = $credentials['organSlug'] ?? null;
+
+        Log::debug('ParsianBankAdapter setAccount called', [
+            'organSlug_received' => $this->organSlug,
+            'accountNumber' => $credentials['accountNumber'] ?? $credentials['number'] ?? null,
+            'all_credentials_keys' => array_keys($credentials),
+        ]);
+
         $this->apiEndpoint = $this->shouldUseSandbox() ? $this->getSandboxUrl() : $this->getApiUrl();
         $this->token = $this->getAccessToken();
 
@@ -263,13 +270,26 @@ class ParsianBankAdapter implements BankAdapterInterface
             $envKey = $this->buildOrganEnvKey('PARSIAN_CLIENT_ID');
             $clientId = env($envKey);
 
+            Log::debug('Getting Client ID for organ', [
+                'organSlug' => $this->organSlug,
+                'built_env_key' => $envKey,
+                'env_value' => $clientId ?: 'NOT FOUND',
+                'fallback_to_default' => ! $clientId,
+            ]);
+
             if ($clientId) {
                 return $clientId;
             }
         }
 
         // Fallback to default
-        return config('banks.parsian.client_id');
+        $defaultClientId = config('banks.parsian.client_id');
+        Log::debug('Using default Client ID', [
+            'organSlug' => $this->organSlug,
+            'default_client_id' => $defaultClientId,
+        ]);
+
+        return $defaultClientId;
     }
 
     /**
@@ -281,13 +301,26 @@ class ParsianBankAdapter implements BankAdapterInterface
             $envKey = $this->buildOrganEnvKey('PARSIAN_CLIENT_SECRET');
             $clientSecret = env($envKey);
 
+            Log::debug('Getting Client Secret for organ', [
+                'organSlug' => $this->organSlug,
+                'built_env_key' => $envKey,
+                'env_value_exists' => (bool) $clientSecret,
+                'fallback_to_default' => ! $clientSecret,
+            ]);
+
             if ($clientSecret) {
                 return $clientSecret;
             }
         }
 
         // Fallback to default
-        return config('banks.parsian.client_secret');
+        $defaultClientSecret = config('banks.parsian.client_secret');
+        Log::debug('Using default Client Secret', [
+            'organSlug' => $this->organSlug,
+            'default_client_secret_exists' => (bool) $defaultClientSecret,
+        ]);
+
+        return $defaultClientSecret;
     }
 
     /**

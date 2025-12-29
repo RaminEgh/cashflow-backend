@@ -62,6 +62,7 @@ class ParsianBankAdapter implements BankAdapterInterface
         $cachedToken = Cache::get($cacheKey);
         if ($cachedToken) {
             Log::debug('Using cached Parsian Bank token', [
+                'cachedToken' => $cachedToken,
                 'environment' => $environment,
                 'organSlug' => $this->organSlug,
                 'client_id' => $clientId,
@@ -75,8 +76,8 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         // Try sandbox first, then fallback to production
         $urls = [
-            'sandbox' => config('banks.parsian.oauth_sandbox_token_url', 'https://sandbox.parsian-bank.ir/oauth2/token'),
-            'production' => config('banks.parsian.oauth_token_url', 'https://oauth2.parsian-bank.ir/oauth2/token'),
+            'sandbox' => config('banks.parsian.oauth_sandbox_token_url'),
+            'production' => config('banks.parsian.oauth_token_url'),
         ];
 
         $authUrl = $this->shouldUseSandbox() ? $urls['sandbox'] : $urls['production'];
@@ -373,6 +374,7 @@ class ParsianBankAdapter implements BankAdapterInterface
             'url' => $url,
             'apiEndpoint' => $this->apiEndpoint,
             'serviceName' => self::SERVICE_GET_ACCOUNT_BALANCE,
+            'note' => "Authenticated with organ: {$this->organSlug} (Client ID: {$clientId}), requesting account: {$accountNumber}",
         ]);
 
         try {
@@ -418,6 +420,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'response' => $responseBody,
                 'data' => $responseData,
                 'url' => $url,
+                'note' => "Authenticated with organ: {$this->organSlug} (Client ID: {$clientId}), but requesting account: {$accountNumber}",
             ]);
 
             // Handle authentication errors

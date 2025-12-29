@@ -28,7 +28,13 @@ class FetchBankAccountBalance implements ShouldQueue
      */
     public function __construct(public Deposit $deposit)
     {
-        Log::info("Starting to fetch balance for deposit ID: {$this->deposit->number}");
+        Log::info("Starting to fetch balance for deposit", [
+            'deposit_id' => $this->deposit->id,
+            'deposit_number' => $this->deposit->number,
+            'organ_id' => $this->deposit->organ_id,
+            'organ_slug' => $this->deposit->relationLoaded('organ') ? $this->deposit->organ->slug : null,
+            'organ_name' => $this->deposit->relationLoaded('organ') ? ($this->deposit->organ->name ?? null) : null,
+        ]);
     }
 
     /**
@@ -71,7 +77,15 @@ class FetchBankAccountBalance implements ShouldQueue
             throw new \Exception("Organ not found for deposit ID: {$this->deposit->id}");
         }
 
-        Log::info("Starting to fetch balances for deposit ID: {$this->deposit->number}");
+        Log::info("Starting to fetch balances for deposit", [
+            'deposit_id' => $this->deposit->id,
+            'deposit_number' => $this->deposit->number,
+            'organ_id' => $this->deposit->organ->id,
+            'organ_slug' => $this->deposit->organ->slug,
+            'organ_name' => $this->deposit->organ->name ?? null,
+            'bank_id' => $this->deposit->bank->id,
+            'bank_slug' => $this->deposit->bank->slug,
+        ]);
 
         $balance = null;
         $balanceStatus = BalanceStatus::Fail;
@@ -82,6 +96,14 @@ class FetchBankAccountBalance implements ShouldQueue
         // Fetch bank balance
         if ($this->shouldFetchBalanceFromBankApi()) {
             try {
+                Log::info("Attempting to fetch bank balance", [
+                    'deposit_id' => $this->deposit->id,
+                    'deposit_number' => $this->deposit->number,
+                    'organ_slug' => $this->deposit->organ->slug,
+                    'organ_name' => $this->deposit->organ->name ?? null,
+                    'bank_slug' => $this->deposit->bank->slug,
+                ]);
+
                 $adapter = $bankFactory->make($this->deposit->bank->slug);
                 $rawBalance = $adapter->setAccount([
                     'accountNumber' => $this->deposit->number,
@@ -91,13 +113,32 @@ class FetchBankAccountBalance implements ShouldQueue
                 if ($this->isValidBalance($rawBalance)) {
                     $balance = (int) $rawBalance;
                     $balanceStatus = BalanceStatus::Success;
-                    Log::info("Successfully fetched bank balance for deposit ID: {$this->deposit->id} with balance: {$balance}");
+                    Log::info("Successfully fetched bank balance", [
+                        'deposit_id' => $this->deposit->id,
+                        'deposit_number' => $this->deposit->number,
+                        'organ_slug' => $this->deposit->organ->slug,
+                        'organ_name' => $this->deposit->organ->name ?? null,
+                        'balance' => $balance,
+                    ]);
                 } else {
                     $balanceStatus = BalanceStatus::Fail;
-                    Log::warning("Invalid bank balance for deposit ID {$this->deposit->id}: {$rawBalance} (negative or out of range)");
+                    Log::warning("Invalid bank balance", [
+                        'deposit_id' => $this->deposit->id,
+                        'deposit_number' => $this->deposit->number,
+                        'organ_slug' => $this->deposit->organ->slug,
+                        'organ_name' => $this->deposit->organ->name ?? null,
+                        'raw_balance' => $rawBalance,
+                        'reason' => 'negative or out of range',
+                    ]);
                 }
             } catch (Throwable $e) {
-                Log::error("Failed to fetch bank balance for deposit ID {$this->deposit->id}: " . $e->getMessage());
+                Log::error("Failed to fetch bank balance", [
+                    'deposit_id' => $this->deposit->id,
+                    'deposit_number' => $this->deposit->number,
+                    'organ_slug' => $this->deposit->organ->slug,
+                    'organ_name' => $this->deposit->organ->name ?? null,
+                    'error' => $e->getMessage(),
+                ]);
             }
         } else {
             Log::info("Skipping bank balance fetch (no access configured) for deposit ID: {$this->deposit->id}", [
@@ -129,21 +170,50 @@ class FetchBankAccountBalance implements ShouldQueue
                         $rahkaranFetchedAt = Carbon::parse($rahkaranData['job_Date'])->toDateTimeString();
                         $rahkaranStatus = BalanceStatus::Success;
 
-                        Log::info("Successfully fetched Rahkaran balance for deposit ID: {$this->deposit->id} with balance: {$rahkaranBalance}");
+                        Log::info("Successfully fetched Rahkaran balance", [
+                            'deposit_id' => $this->deposit->id,
+                            'deposit_number' => $this->deposit->number,
+                            'organ_slug' => $this->deposit->organ->slug,
+                            'organ_name' => $this->deposit->organ->name ?? null,
+                            'balance' => $rahkaranBalance,
+                        ]);
                     } else {
                         $rahkaranStatus = BalanceStatus::Fail;
-                        Log::warning("Invalid Rahkaran balance for deposit ID {$this->deposit->id}: {$rawRahkaranBalance} (negative or out of range)");
+                        Log::warning("Invalid Rahkaran balance", [
+                            'deposit_id' => $this->deposit->id,
+                            'deposit_number' => $this->deposit->number,
+                            'organ_slug' => $this->deposit->organ->slug,
+                            'organ_name' => $this->deposit->organ->name ?? null,
+                            'raw_balance' => $rawRahkaranBalance,
+                            'reason' => 'negative or out of range',
+                        ]);
                     }
                 } else {
-                    Log::warning("Rahkaran response missing required fields for deposit ID: {$this->deposit->id}", [
+                    Log::warning("Rahkaran response missing required fields", [
+                        'deposit_id' => $this->deposit->id,
+                        'deposit_number' => $this->deposit->number,
+                        'organ_slug' => $this->deposit->organ->slug,
+                        'organ_name' => $this->deposit->organ->name ?? null,
                         'response' => $rahkaranData,
                     ]);
                 }
             } else {
-                Log::error("Failed to fetch Rahkaran balance for deposit ID {$this->deposit->id}: HTTP {$response->status()}");
+                Log::error("Failed to fetch Rahkaran balance", [
+                    'deposit_id' => $this->deposit->id,
+                    'deposit_number' => $this->deposit->number,
+                    'organ_slug' => $this->deposit->organ->slug,
+                    'organ_name' => $this->deposit->organ->name ?? null,
+                    'http_status' => $response->status(),
+                ]);
             }
         } catch (Throwable $e) {
-            Log::error("Failed to fetch Rahkaran balance for deposit ID {$this->deposit->id}: " . $e->getMessage());
+            Log::error("Failed to fetch Rahkaran balance", [
+                'deposit_id' => $this->deposit->id,
+                'deposit_number' => $this->deposit->number,
+                'organ_slug' => $this->deposit->organ->slug,
+                'organ_name' => $this->deposit->organ->name ?? null,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         // Create balance record with both balances
@@ -181,14 +251,22 @@ class FetchBankAccountBalance implements ShouldQueue
 
         // Log the result (success or failure)
         if ($balanceStatus === BalanceStatus::Fail && $rahkaranStatus === BalanceStatus::Fail) {
-            Log::warning("Failed to fetch both bank and Rahkaran balances for deposit ID: {$this->deposit->id}", [
+            Log::warning("Failed to fetch both bank and Rahkaran balances", [
                 'deposit_id' => $this->deposit->id,
                 'deposit_number' => $this->deposit->number,
+                'organ_id' => $this->deposit->organ->id,
+                'organ_slug' => $this->deposit->organ->slug,
+                'organ_name' => $this->deposit->organ->name ?? null,
                 'bank_balance_status' => $balanceStatus->value,
                 'rahkaran_balance_status' => $rahkaranStatus->value,
             ]);
         } else {
-            Log::info("Successfully updated balances for deposit ID: {$this->deposit->id}", [
+            Log::info("Successfully updated balances", [
+                'deposit_id' => $this->deposit->id,
+                'deposit_number' => $this->deposit->number,
+                'organ_id' => $this->deposit->organ->id,
+                'organ_slug' => $this->deposit->organ->slug,
+                'organ_name' => $this->deposit->organ->name ?? null,
                 'bank_balance' => $balance,
                 'rahkaran_balance' => $rahkaranBalance,
                 'bank_balance_status' => $balanceStatus->value,

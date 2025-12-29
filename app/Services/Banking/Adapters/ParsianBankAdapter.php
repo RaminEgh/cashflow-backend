@@ -266,6 +266,40 @@ class ParsianBankAdapter implements BankAdapterInterface
     }
 
     /**
+     * Format error message for better readability
+     */
+    protected function formatErrorMessage(string $errorMessage, string $persianMessage, string $accountNumber, int $statusCode, ?int $errorCode): string
+    {
+        $parts = [];
+
+        // Add status code
+        $parts[] = "خطای HTTP {$statusCode}";
+
+        // Add error code if available
+        if ($errorCode !== null) {
+            $parts[] = "کد خطا: {$errorCode}";
+        }
+
+        // Add account number that was sent
+        $parts[] = "شماره حساب ارسالی: {$accountNumber}";
+
+        // Add Persian message (usually more descriptive)
+        if ($persianMessage && $persianMessage !== $errorMessage) {
+            $parts[] = "پیام خطا: {$persianMessage}";
+        } else {
+            $parts[] = "پیام خطا: {$errorMessage}";
+        }
+
+        // Check if error mentions account numbers that don't match pattern
+        if (str_contains($persianMessage, 'با الگو مطابقت ندارد') || str_contains($errorMessage, 'does not match')) {
+            $parts[] = "\n⚠️ توجه: شماره حساب ارسالی با الگوی مورد انتظار API مطابقت ندارد.";
+            $parts[] = "لطفاً شماره حساب را بررسی کنید یا با پشتیبانی بانک پارسیان تماس بگیرید.";
+        }
+
+        return implode("\n", $parts);
+    }
+
+    /**
      * @throws \Exception
      */
     public function getBalance(): int
@@ -305,9 +339,17 @@ class ParsianBankAdapter implements BankAdapterInterface
             $responseBody = $response->body();
             $responseData = $response->json();
 
+            // Extract error message with better formatting
+            $errorMessage = $responseData['message'] ?? $responseData['error'] ?? $responseData['exceptionDetail'] ?? 'Unknown error';
+            $errorCode = $responseData['code'] ?? $responseData['errorCode'] ?? null;
+            $persianMessage = $responseData['description']['fa_IR'] ?? $errorMessage;
+
             Log::error('Failed to fetch balance from Parsian Bank', [
                 'accountNumber' => $accountNumber,
                 'status' => $statusCode,
+                'errorCode' => $errorCode,
+                'errorMessage' => $errorMessage,
+                'persianMessage' => $persianMessage,
                 'response' => $responseBody,
                 'data' => $responseData,
                 'url' => $url,
@@ -315,17 +357,17 @@ class ParsianBankAdapter implements BankAdapterInterface
 
             // Handle authentication errors
             if ($statusCode === 401 || $statusCode === 403) {
-                throw new \Exception("Authentication failed when fetching balance from Parsian Bank (HTTP {$statusCode}). Token may be expired or invalid.");
+                throw new \Exception("خطای احراز هویت: توکن منقضی شده یا نامعتبر است (HTTP {$statusCode})");
             }
 
             // Handle account not found errors
             if (isset($responseData['exception']) || (isset($responseData['error']) && str_contains(strtolower($responseData['error']), 'account not found'))) {
-                throw new \Exception("Account not found: {$accountNumber}");
+                throw new \Exception("حساب بانکی پیدا نشد: {$accountNumber}");
             }
 
-            // Include error message from response if available
-            $errorMessage = $responseData['error'] ?? $responseData['message'] ?? 'Unknown error';
-            throw new \Exception("Failed to fetch balance from Parsian Bank (HTTP {$statusCode}): {$errorMessage}");
+            // Format error message for better readability
+            $formattedError = $this->formatErrorMessage($errorMessage, $persianMessage, $accountNumber, $statusCode, $errorCode);
+            throw new \Exception($formattedError);
         }
 
         $data = $response->json();

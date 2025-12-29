@@ -2,7 +2,9 @@
 
 namespace App\Services\Rahkaran;
 
+use App\Enums\UserType;
 use App\Models\Organ;
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
 
 class OrganizationFetchService
@@ -13,6 +15,13 @@ class OrganizationFetchService
 
         if (! $rahkaranApi) {
             throw new \Exception('RAHKARAN_BASE_ENDPOINT is not set in .env file');
+        }
+
+        // Get the first admin user for created_by and updated_by
+        $adminUser = User::where('type', UserType::Admin->value)->first();
+
+        if (! $adminUser) {
+            throw new \Exception('No admin user found. Please seed the admin user first.');
         }
 
         // Ensure URL doesn't have trailing slash
@@ -32,8 +41,8 @@ class OrganizationFetchService
                 Organ::Create([
                     'name' => $data['CompanyName'],
                     'en_name' => $data['En_CompanyName'],
-                    'created_by' => 1,
-                    'updated_by' => 1,
+                    'created_by' => $adminUser->id,
+                    'updated_by' => $adminUser->id,
                 ]);
             }
         }

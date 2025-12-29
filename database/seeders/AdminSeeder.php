@@ -13,13 +13,15 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        User::create([
-            'first_name' => 'رامین',
-            'last_name' => 'اقبالیان',
-            'email' => 'ramineghbaliankhob@gmail.com',
-            'password' => Hash::make('12345678'),
-            'type' => User::TYPE_ADMIN,
-            'status' => User::STATUS_ACTIVE,
-        ]);
+        User::firstOrCreate(
+            ['email' => 'ramineghbaliankhob@gmail.com'],
+            [
+                'first_name' => 'رامین',
+                'last_name' => 'اقبالیان',
+                'password' => Hash::make('12345678'),
+                'type' => User::TYPE_ADMIN,
+                'status' => User::STATUS_ACTIVE,
+            ]
+        );
     }
 }

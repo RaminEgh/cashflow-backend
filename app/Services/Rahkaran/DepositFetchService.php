@@ -3,10 +3,12 @@
 namespace App\Services\Rahkaran;
 
 use App\Enums\DepositType;
+use App\Enums\UserType;
 use App\Helpers\Helper;
 use App\Models\Bank;
 use App\Models\Deposit;
 use App\Models\Organ;
+use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -14,12 +16,18 @@ class DepositFetchService
 {
     public function fetchAndStore()
     {
-
         $organs = Organ::all();
         $rahkaranApi = config('services.rahkaran.base_endpoint');
 
         if (! $rahkaranApi) {
             throw new \Exception('RAHKARAN_BASE_ENDPOINT is not set in .env file');
+        }
+
+        // Get the first admin user for created_by and updated_by
+        $adminUser = User::where('type', UserType::Admin->value)->first();
+
+        if (! $adminUser) {
+            throw new \Exception('No admin user found. Please seed the admin user first.');
         }
 
         // Ensure URL doesn't have trailing slash
@@ -45,8 +53,8 @@ class DepositFetchService
                         $bank = Bank::Create([
                             'name' => $bankName,
                             'en_name' => $enName,
-                            'created_by' => 1,
-                            'updated_by' => 1,
+                            'created_by' => $adminUser->id,
+                            'updated_by' => $adminUser->id,
                             'logo' => null,
                         ]);
                     }
@@ -59,15 +67,16 @@ class DepositFetchService
                             'branch_code' => $data['BranchCode'],
                             'branch_name' => $data['BankBranch'],
                             'number' => $data['AccountNumber'],
-                            'type' => DepositType::Current,
+                            'type' => $this->determineDepositType($data['AccountType']),
                             'currency' => 'IRR',
-                            'created_by' => 1,
-                            'updated_by' => 1,
+                            'description' => $data['AccountType'],
+                            'created_by' => $adminUser->id,
+                            'updated_by' => $adminUser->id,
                         ]);
                     }
                 }
             } catch (\Throwable $e) {
-                Log::error("Error fetching/storing deposits for organ {$organ->slug}: ".$e->getMessage());
+                Log::error("Error fetching/storing deposits for organ {$organ->slug}: " . $e->getMessage());
 
                 continue;
             }
@@ -213,5 +222,67 @@ class DepositFetchService
         }
 
         return null;
+    }
+
+    /**
+     * Determine deposit type based on Persian account type string from API response.
+     */
+    private function determineDepositType(string $accountType): DepositType
+    {
+        // Normalize the account type string (remove extra spaces, parentheses content, and dash-separated suffixes)
+        $normalized = trim($accountType);
+        $normalized = preg_replace('/\s*\([^)]*\)\s*/u', '', $normalized); // Remove parentheses and their content
+        $normalized = preg_replace('/\s*-\s*[^-]+$/u', '', $normalized); // Remove dash-separated suffixes (e.g., "- اشخاص حقوقی", "- درگاه اینترنتی")
+        $normalized = preg_replace('/\s+/u', ' ', $normalized); // Normalize spaces
+        $normalized = trim($normalized);
+
+        // Mapping of Persian account types to DepositType enum
+        $mapping = [
+            'حساب جاری' => DepositType::Current,
+            'حساب جاری بدون دسته چک' => DepositType::Current,
+            'حساب جاری گردشگری' => DepositType::Current,
+            'جاری' => DepositType::Current,
+            'حساب قرض الحسنه' => DepositType::CurrentQarz,
+            'حساب قرض الحسنه جاری' => DepositType::CurrentQarz,
+            'سپرده قرض الحسنه جاری' => DepositType::CurrentQarz,
+            'قرض الحسنه' => DepositType::CurrentQarz,
+            'قرض الحسنه متمرکز اشخاص' => DepositType::CurrentQarz,
+            'حساب قرض الحسنه پس انداز' => DepositType::SavingQarz,
+            'قرض الحسنه پس انداز' => DepositType::SavingQarz,
+            'حساب سرمایه گذاری بلندمدت' => DepositType::LongTermInvestment,
+            'سپرده بلند مدت' => DepositType::LongTermInvestment,
+            'حساب سرمایه گذاری کوتاه مدت' => DepositType::ShortTermInvestment,
+            'حساب سپرده کوتاه مدت' => DepositType::ShortTermInvestment,
+            'حساب سپرده کوتاه مدت پشتیبان' => DepositType::ShortTermInvestment,
+            'حساب کوتاه مدت' => DepositType::ShortTermInvestment,
+            'سپرده کوتاه مدت' => DepositType::ShortTermInvestment,
+            'کوتاه مدت' => DepositType::ShortTermInvestment,
+            'کوتاه مدت-فراز' => DepositType::ShortTermInvestment,
+            'پس انداز عادی' => DepositType::ShortTermInvestment,
+            'سپرده پس انداز عادی' => DepositType::ShortTermInvestment,
+            'پس انداز' => DepositType::ShortTermInvestment,
+            'اداره شده' => DepositType::Fiduciary, // Managed account
+            'حساب اشتراکی' => DepositType::Joint,
+            'حساب ارزی' => DepositType::ForeignCurrency,
+            'حساب وکالتی' => DepositType::Fiduciary,
+        ];
+
+        // Try exact match first
+        if (isset($mapping[$normalized])) {
+            return $mapping[$normalized];
+        }
+
+        // Try partial matching for variations
+        foreach ($mapping as $key => $type) {
+            // Check if the normalized string contains the key or vice versa
+            if (mb_strpos($normalized, $key) !== false || mb_strpos($key, $normalized) !== false) {
+                return $type;
+            }
+        }
+
+        // Default to Current account if no match found
+        Log::warning("Unknown account type '{$accountType}', defaulting to Current account type");
+
+        return DepositType::Current;
     }
 }

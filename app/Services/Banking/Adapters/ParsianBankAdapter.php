@@ -268,13 +268,17 @@ class ParsianBankAdapter implements BankAdapterInterface
     {
         if ($this->organSlug) {
             $envKey = $this->buildOrganEnvKey('PARSIAN_CLIENT_ID');
-            $clientId = env($envKey);
+
+            // Try multiple methods to read env variable in runtime
+            $clientId = getenv($envKey) ?: ($_ENV[$envKey] ?? env($envKey));
 
             Log::info('Getting Client ID for organ', [
                 'organSlug' => $this->organSlug,
                 'built_env_key' => $envKey,
                 'env_value' => $clientId ?: 'NOT FOUND',
                 'env_value_length' => $clientId ? strlen($clientId) : 0,
+                'getenv_result' => getenv($envKey) ?: 'NOT FOUND',
+                'env_result' => env($envKey) ?: 'NOT FOUND',
                 'fallback_to_default' => ! $clientId,
             ]);
 
@@ -301,13 +305,17 @@ class ParsianBankAdapter implements BankAdapterInterface
     {
         if ($this->organSlug) {
             $envKey = $this->buildOrganEnvKey('PARSIAN_CLIENT_SECRET');
-            $clientSecret = env($envKey);
+
+            // Try multiple methods to read env variable in runtime
+            $clientSecret = getenv($envKey) ?: ($_ENV[$envKey] ?? env($envKey));
 
             Log::info('Getting Client Secret for organ', [
                 'organSlug' => $this->organSlug,
                 'built_env_key' => $envKey,
                 'env_value_exists' => (bool) $clientSecret,
                 'env_value_preview' => $clientSecret ? $this->maskSecret($clientSecret) : 'NOT FOUND',
+                'getenv_result' => getenv($envKey) ? 'FOUND' : 'NOT FOUND',
+                'env_result' => env($envKey) ? 'FOUND' : 'NOT FOUND',
                 'fallback_to_default' => ! $clientSecret,
             ]);
 

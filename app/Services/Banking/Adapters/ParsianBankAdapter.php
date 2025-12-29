@@ -51,18 +51,21 @@ class ParsianBankAdapter implements BankAdapterInterface
         // Try to get token from cache first
         $environment = $this->shouldUseSandbox() ? 'sandbox' : 'production';
 
-        // Build cache key based on organ slug if available, otherwise use client ID
-        if ($this->organSlug) {
-            $cacheKey = "parsian_bank_token_{$environment}_{$this->organSlug}";
-        } else {
-            $cacheKey = "parsian_bank_token_{$environment}_{$clientId}";
+        // Each organ must have its own token, so organSlug is required
+        if (! $this->organSlug) {
+            throw new \Exception('Organ slug is required for Parsian Bank token caching. Each organ must have its own token.');
         }
+
+        // Build cache key based on organ slug - each organ has its own token
+        $cacheKey = "parsian_bank_token_{$environment}_{$this->organSlug}";
 
         $cachedToken = Cache::get($cacheKey);
         if ($cachedToken) {
             Log::debug('Using cached Parsian Bank token', [
                 'environment' => $environment,
                 'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'cache_key' => $cacheKey,
                 'token_preview' => substr($cachedToken, 0, 20) . '...',
             ]);
@@ -103,6 +106,8 @@ class ParsianBankAdapter implements BankAdapterInterface
                 Log::info('Successfully obtained and cached Parsian Bank token', [
                     'environment' => $environment,
                     'organSlug' => $this->organSlug,
+                    'client_id' => $clientId,
+                    'client_secret' => $this->maskSecret($clientSecret),
                     'cache_key' => $cacheKey,
                     'expires_in' => $expiresIn,
                     'cache_duration' => $cacheDuration,
@@ -117,6 +122,9 @@ class ParsianBankAdapter implements BankAdapterInterface
 
             Log::warning('Parsian Bank authentication failed with primary URL', [
                 'url' => $authUrl,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'status' => $statusCode,
                 'response' => $responseBody,
                 'data' => $responseData,
@@ -132,12 +140,18 @@ class ParsianBankAdapter implements BankAdapterInterface
             $lastException = $e;
             Log::warning('Parsian Bank primary URL connection failed', [
                 'url' => $authUrl,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'error' => $e->getMessage(),
             ]);
         } catch (\Exception $e) {
             $lastException = $e;
             Log::warning('Parsian Bank primary URL failed', [
                 'url' => $authUrl,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'error' => $e->getMessage(),
             ]);
         }
@@ -168,6 +182,8 @@ class ParsianBankAdapter implements BankAdapterInterface
                 Log::info('Parsian Bank authentication succeeded with fallback URL and cached', [
                     'fallback_url' => $fallbackUrl,
                     'organSlug' => $this->organSlug,
+                    'client_id' => $clientId,
+                    'client_secret' => $this->maskSecret($clientSecret),
                     'cache_key' => $cacheKey,
                     'expires_in' => $expiresIn,
                     'cache_duration' => $cacheDuration,
@@ -183,6 +199,9 @@ class ParsianBankAdapter implements BankAdapterInterface
             Log::error('Failed to authenticate with Parsian Bank (both URLs)', [
                 'primary_url' => $authUrl,
                 'fallback_url' => $fallbackUrl,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'status' => $statusCode,
                 'response' => $responseBody,
                 'data' => $responseData,
@@ -196,6 +215,9 @@ class ParsianBankAdapter implements BankAdapterInterface
             Log::error('Failed to authenticate with Parsian Bank - connection error', [
                 'primary_url' => $authUrl,
                 'fallback_url' => $fallbackUrl,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'primary_error' => $lastException?->getMessage(),
                 'fallback_error' => $e->getMessage(),
             ]);
@@ -205,6 +227,9 @@ class ParsianBankAdapter implements BankAdapterInterface
             Log::error('Failed to authenticate with Parsian Bank', [
                 'primary_url' => $authUrl,
                 'fallback_url' => $fallbackUrl,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'primary_error' => $lastException?->getMessage(),
                 'fallback_error' => $e->getMessage(),
             ]);
@@ -277,6 +302,23 @@ class ParsianBankAdapter implements BankAdapterInterface
     }
 
     /**
+     * Mask secret for safe logging (shows only last 4 characters)
+     */
+    protected function maskSecret(?string $secret): string
+    {
+        if (! $secret) {
+            return 'NOT SET';
+        }
+
+        $length = strlen($secret);
+        if ($length <= 4) {
+            return str_repeat('*', $length);
+        }
+
+        return str_repeat('*', $length - 4) . substr($secret, -4);
+    }
+
+    /**
      * Format error message for better readability
      */
     protected function formatErrorMessage(string $errorMessage, string $persianMessage, string $accountNumber, int $statusCode, ?int $errorCode): string
@@ -320,8 +362,14 @@ class ParsianBankAdapter implements BankAdapterInterface
         // Service name is camelCase, no URL encoding needed
         $url = $this->apiEndpoint . '/' . self::SERVICE_GET_ACCOUNT_BALANCE;
 
+        $clientId = $this->getClientId();
+        $clientSecret = $this->getClientSecret();
+
         Log::info('Fetching balance from Parsian Bank', [
             'accountNumber' => $accountNumber,
+            'organSlug' => $this->organSlug,
+            'client_id' => $clientId,
+            'client_secret' => $this->maskSecret($clientSecret),
             'url' => $url,
             'apiEndpoint' => $this->apiEndpoint,
             'serviceName' => self::SERVICE_GET_ACCOUNT_BALANCE,
@@ -338,6 +386,9 @@ class ParsianBankAdapter implements BankAdapterInterface
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('Connection timeout or error when fetching balance from Parsian Bank', [
                 'accountNumber' => $accountNumber,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'url' => $url,
                 'error' => $e->getMessage(),
             ]);
@@ -357,6 +408,9 @@ class ParsianBankAdapter implements BankAdapterInterface
 
             Log::error('Failed to fetch balance from Parsian Bank', [
                 'accountNumber' => $accountNumber,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'status' => $statusCode,
                 'errorCode' => $errorCode,
                 'errorMessage' => $errorMessage,
@@ -387,6 +441,9 @@ class ParsianBankAdapter implements BankAdapterInterface
         if (isset($data['exception']) || (isset($data['error']) && str_contains(strtolower($data['error']), 'account not found'))) {
             Log::error('Parsian Bank account not found', [
                 'accountNumber' => $accountNumber,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'url' => $url,
                 'data' => $data,
             ]);
@@ -397,6 +454,9 @@ class ParsianBankAdapter implements BankAdapterInterface
         if (isset($data['error']) || ! isset($data['balance'])) {
             Log::error('Parsian Bank returned an error or missing balance field', [
                 'accountNumber' => $accountNumber,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'url' => $url,
                 'data' => $data,
                 'hasError' => isset($data['error']),
@@ -409,6 +469,9 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         Log::info('Successfully fetched balance from Parsian Bank', [
             'accountNumber' => $accountNumber,
+            'organSlug' => $this->organSlug,
+            'client_id' => $clientId,
+            'client_secret' => $this->maskSecret($clientSecret),
             'balance' => $data['balance'],
         ]);
 
@@ -425,6 +488,8 @@ class ParsianBankAdapter implements BankAdapterInterface
     public function getAccountBalance(): array
     {
         $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? throw new \Exception('Account number is required');
+        $clientId = $this->getClientId();
+        $clientSecret = $this->getClientSecret();
 
         $url = $this->apiEndpoint . '/' . self::SERVICE_GET_ACCOUNT_BALANCE;
 
@@ -438,6 +503,9 @@ class ParsianBankAdapter implements BankAdapterInterface
         if (! $response->successful()) {
             Log::error('Failed to fetch balance from Parsian Bank', [
                 'accountNumber' => $accountNumber,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'status' => $response->status(),
                 'response' => $response->body(),
             ]);
@@ -455,6 +523,9 @@ class ParsianBankAdapter implements BankAdapterInterface
         if (! isset($data['balance'])) {
             Log::error('Parsian Bank returned an invalid response', [
                 'accountNumber' => $accountNumber,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'data' => $data,
             ]);
 

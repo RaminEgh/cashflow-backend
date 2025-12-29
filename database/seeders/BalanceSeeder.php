@@ -16,7 +16,7 @@ class BalanceSeeder extends Seeder
      */
     public function run(): void
     {
-        $deposits = Deposit::all();
+        $deposits = Deposit::with('bank')->get();
 
         if ($deposits->isEmpty()) {
             $this->command->warn('No deposits found. Please seed deposits first.');
@@ -45,6 +45,12 @@ class BalanceSeeder extends Seeder
         $totalCreated = 0;
 
         foreach ($deposits as $deposit) {
+            // Skip generating fake data for Parsian bank deposits
+            if ($deposit->bank && $deposit->bank->slug === 'parsian') {
+                $this->command->line("  Skipping deposit ID: {$deposit->id} (Parsian Bank - no fake data)");
+                continue;
+            }
+
             $this->command->line("Processing deposit ID: {$deposit->id} (Organ: {$deposit->organ_id})");
 
             // Generate a base balance amount for this deposit (to make it realistic)
@@ -112,7 +118,7 @@ class BalanceSeeder extends Seeder
                 $totalCreated += count($chunk);
             }
 
-            $this->command->line('  Created '.count($balancesToInsert)." balance records for deposit ID: {$deposit->id}");
+            $this->command->line('  Created ' . count($balancesToInsert) . " balance records for deposit ID: {$deposit->id}");
         }
 
         $this->command->info("Total balance records created: {$totalCreated}");

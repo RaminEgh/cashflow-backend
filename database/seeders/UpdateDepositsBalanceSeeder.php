@@ -12,7 +12,7 @@ class UpdateDepositsBalanceSeeder extends Seeder
      */
     public function run(): void
     {
-        $deposits = Deposit::all();
+        $deposits = Deposit::with('bank')->get();
 
         if ($deposits->isEmpty()) {
             $this->command->warn('No deposits found.');
@@ -29,11 +29,17 @@ class UpdateDepositsBalanceSeeder extends Seeder
         }
 
         $this->command->info('Updating deposits balances...');
-        $this->command->line('Deposits with difference: '.implode(', ', $depositsWithDifference));
+        $this->command->line('Deposits with difference: ' . implode(', ', $depositsWithDifference));
 
         $updated = 0;
 
         foreach ($deposits as $deposit) {
+            // Skip generating fake data for Parsian bank deposits
+            if ($deposit->bank && $deposit->bank->slug === 'parsian') {
+                $this->command->line("  Skipping deposit ID: {$deposit->id} (Parsian Bank - no fake data)");
+                continue;
+            }
+
             $hasDifference = in_array($deposit->id, $depositsWithDifference);
 
             // If deposit has rahkaran_balance, use it as base, otherwise generate a random value
@@ -56,6 +62,8 @@ class UpdateDepositsBalanceSeeder extends Seeder
                 // For other deposits, balance equals rahkaran_balance
                 $balance = $rahkaranBalance;
             }
+
+
 
             $deposit->update([
                 'balance' => $balance,

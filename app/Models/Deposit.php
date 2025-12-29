@@ -25,6 +25,8 @@ class Deposit extends Model
         return [
             'type' => DepositType::class,
             'has_access_banking_api' => 'boolean',
+            'last_balance_sync_success' => 'boolean',
+            'last_rahkaran_sync_success' => 'boolean',
         ];
     }
 

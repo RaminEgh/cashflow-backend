@@ -53,10 +53,10 @@ class TimelineEntrySeeder extends Seeder
                 $dailyCount = $useSameDay ? random_int(1, 10) : 1;
 
                 for ($i = 0; $i < $dailyCount && $created < $entriesPerOrgan; $i++) {
-                    $type = fake()->randomElement([TimelineEntry::TYPE_INCOME, TimelineEntry::TYPE_EXPENSE]);
+                    $type = \fake()->randomElement([TimelineEntry::TYPE_INCOME, TimelineEntry::TYPE_EXPENSE]);
                     $title = $type === TimelineEntry::TYPE_INCOME
-                        ? fake()->randomElement($persianIncomeTitles)
-                        : fake()->randomElement($persianExpenseTitles);
+                        ? \fake()->randomElement($persianIncomeTitles)
+                        : \fake()->randomElement($persianExpenseTitles);
 
                     TimelineEntry::factory()->create([
                         'organ_id' => $organ->id,
@@ -64,8 +64,8 @@ class TimelineEntrySeeder extends Seeder
                         'title' => $title,
                         'date' => $date->format('Y-m-d'),
                         'amount' => $type === TimelineEntry::TYPE_INCOME
-                            ? fake()->numberBetween(50_000_000, 100_000_000_000)
-                            : fake()->numberBetween(10_000_000, 50_000_000_000),
+                            ? \fake()->numberBetween(50_000_000, 100_000_000_000)
+                            : \fake()->numberBetween(10_000_000, 50_000_000_000),
                     ]);
 
                     $created++;

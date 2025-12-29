@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
@@ -33,8 +34,16 @@ class SetupAppCommand extends Command
             $this->info('setup started...');
             Storage::disk('public_uploads')->makeDirectory('/');
             Storage::disk('private_uploads')->makeDirectory('/');
-            $this->call('storage:link');
-            $this->info('Storage directories and symlink created!');
+
+            $storageLink = public_path('storage');
+            if (! File::exists($storageLink)) {
+                $this->call('storage:link');
+                $this->info('Storage symlink created!');
+            } else {
+                $this->info('Storage symlink already exists, skipping...');
+            }
+
+            $this->info('Storage directories created!');
             if (! Schema::hasTable('cache')) {
                 $this->call('migrate:fresh');
                 $this->call('db:seed', ['--class' => 'AdminSeeder']);

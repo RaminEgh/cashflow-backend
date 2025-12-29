@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,8 +23,16 @@ class ProductionSeeder extends Seeder
             Artisan::call('key:generate');
             Storage::disk('public_uploads')->makeDirectory('/');
             Storage::disk('private_uploads')->makeDirectory('/');
-            $this->call('storage:link');
-            $this->command->info('Storage directories and symlink created!');
+
+            $storageLink = public_path('storage');
+            if (! File::exists($storageLink)) {
+                $this->call('storage:link');
+                $this->command->info('Storage symlink created!');
+            } else {
+                $this->command->info('Storage symlink already exists, skipping...');
+            }
+
+            $this->command->info('Storage directories created!');
             if (! Schema::hasTable('cache')) {
                 $this->call('migrate:fresh');
             }
@@ -52,7 +61,7 @@ class ProductionSeeder extends Seeder
             $this->command->info('setup finished...');
         } catch (\Throwable $e) {
             DB::rollBack();
-            $this->command->error('Error occurred: '.$e->getMessage());
+            $this->command->error('Error occurred: ' . $e->getMessage());
         }
     }
 }

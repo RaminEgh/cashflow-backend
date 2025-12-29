@@ -21,8 +21,10 @@ return new class extends Migration
             $table->string('number');
             $table->unsignedBigInteger('balance')->nullable();
             $table->unsignedBigInteger('rahkaran_balance')->nullable();
-            $table->timestamp('balance_last_synced_at')->nullable();
-            $table->timestamp('rahkaran_balance_last_synced_at')->nullable();
+            $table->timestamp('balance_synced_at')->nullable();
+            $table->timestamp('rahkaran_synced_at')->nullable();
+            $table->boolean('last_balance_sync_success')->default(false);
+            $table->boolean('last_rahkaran_sync_success')->default(false);
             $table->string('sheba')->nullable();
             $table->enum('type', array_map('strval', DepositType::values()));
             $table->string('currency');

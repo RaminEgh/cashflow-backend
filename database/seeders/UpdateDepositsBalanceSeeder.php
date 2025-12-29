@@ -68,8 +68,10 @@ class UpdateDepositsBalanceSeeder extends Seeder
             $deposit->update([
                 'balance' => $balance,
                 'rahkaran_balance' => $rahkaranBalance,
-                'balance_last_synced_at' => now(),
-                'rahkaran_balance_last_synced_at' => now(),
+                'balance_synced_at' => now(),
+                'rahkaran_synced_at' => now(),
+                'last_balance_sync_success' => true,
+                'last_rahkaran_sync_success' => true,
             ]);
 
             $updated++;

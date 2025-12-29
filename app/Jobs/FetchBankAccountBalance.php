@@ -83,13 +83,19 @@ class FetchBankAccountBalance implements ShouldQueue
         if ($this->shouldFetchBalanceFromBankApi()) {
             try {
                 $adapter = $bankFactory->make($this->deposit->bank->slug);
-                $balance = $adapter->setAccount([
+                $rawBalance = $adapter->setAccount([
                     'accountNumber' => $this->deposit->number,
                     'organSlug' => $this->deposit->organ->slug,
                 ])->getBalance();
-                $balanceStatus = BalanceStatus::Success;
 
-                Log::info("Successfully fetched bank balance for deposit ID: {$this->deposit->id} with balance: {$balance}");
+                if ($this->isValidBalance($rawBalance)) {
+                    $balance = (int) $rawBalance;
+                    $balanceStatus = BalanceStatus::Success;
+                    Log::info("Successfully fetched bank balance for deposit ID: {$this->deposit->id} with balance: {$balance}");
+                } else {
+                    $balanceStatus = BalanceStatus::Fail;
+                    Log::warning("Invalid bank balance for deposit ID {$this->deposit->id}: {$rawBalance} (negative or out of range)");
+                }
             } catch (Throwable $e) {
                 Log::error("Failed to fetch bank balance for deposit ID {$this->deposit->id}: " . $e->getMessage());
             }
@@ -116,11 +122,18 @@ class FetchBankAccountBalance implements ShouldQueue
                 $rahkaranData = $response->json();
 
                 if (isset($rahkaranData['balance']) && isset($rahkaranData['job_Date'])) {
-                    $rahkaranBalance = (int) $rahkaranData['balance'];
-                    $rahkaranFetchedAt = Carbon::parse($rahkaranData['job_Date'])->toDateTimeString();
-                    $rahkaranStatus = BalanceStatus::Success;
+                    $rawRahkaranBalance = $rahkaranData['balance'];
 
-                    Log::info("Successfully fetched Rahkaran balance for deposit ID: {$this->deposit->id} with balance: {$rahkaranBalance}");
+                    if ($this->isValidBalance($rawRahkaranBalance)) {
+                        $rahkaranBalance = (int) $rawRahkaranBalance;
+                        $rahkaranFetchedAt = Carbon::parse($rahkaranData['job_Date'])->toDateTimeString();
+                        $rahkaranStatus = BalanceStatus::Success;
+
+                        Log::info("Successfully fetched Rahkaran balance for deposit ID: {$this->deposit->id} with balance: {$rahkaranBalance}");
+                    } else {
+                        $rahkaranStatus = BalanceStatus::Fail;
+                        Log::warning("Invalid Rahkaran balance for deposit ID {$this->deposit->id}: {$rawRahkaranBalance} (negative or out of range)");
+                    }
                 } else {
                     Log::warning("Rahkaran response missing required fields for deposit ID: {$this->deposit->id}", [
                         'response' => $rahkaranData,
@@ -148,31 +161,68 @@ class FetchBankAccountBalance implements ShouldQueue
 
         if ($balance !== null) {
             $updateData['balance'] = $balance;
-            $updateData['balance_last_synced_at'] = now();
+            $updateData['balance_synced_at'] = now();
+            $updateData['last_balance_sync_success'] = true;
+        } else {
+            $updateData['last_balance_sync_success'] = false;
         }
 
         if ($rahkaranBalance !== null && $rahkaranFetchedAt !== null) {
             $updateData['rahkaran_balance'] = $rahkaranBalance;
-            $updateData['rahkaran_balance_last_synced_at'] = $rahkaranFetchedAt;
+            $updateData['rahkaran_synced_at'] = $rahkaranFetchedAt;
+            $updateData['last_rahkaran_sync_success'] = true;
+        } else {
+            $updateData['last_rahkaran_sync_success'] = false;
         }
 
         if (! empty($updateData)) {
             $this->deposit->update($updateData);
         }
 
-        // If both failed, throw an exception to trigger retry
+        // Log the result (success or failure)
         if ($balanceStatus === BalanceStatus::Fail && $rahkaranStatus === BalanceStatus::Fail) {
-            throw new \Exception("Failed to fetch both bank and Rahkaran balances for deposit ID: {$this->deposit->id}");
+            Log::warning("Failed to fetch both bank and Rahkaran balances for deposit ID: {$this->deposit->id}", [
+                'deposit_id' => $this->deposit->id,
+                'deposit_number' => $this->deposit->number,
+                'bank_balance_status' => $balanceStatus->value,
+                'rahkaran_balance_status' => $rahkaranStatus->value,
+            ]);
+        } else {
+            Log::info("Successfully updated balances for deposit ID: {$this->deposit->id}", [
+                'bank_balance' => $balance,
+                'rahkaran_balance' => $rahkaranBalance,
+                'bank_balance_status' => $balanceStatus->value,
+                'rahkaran_balance_status' => $rahkaranStatus->value,
+            ]);
         }
-
-        Log::info("Successfully updated balances for deposit ID: {$this->deposit->id}", [
-            'bank_balance' => $balance,
-            'rahkaran_balance' => $rahkaranBalance,
-        ]);
     }
 
     private function shouldFetchBalanceFromBankApi(): bool
     {
         return (bool) $this->deposit->has_access_banking_api;
+    }
+
+    /**
+     * Validate if a balance value is valid (non-negative and not null).
+     *
+     * @param  mixed  $balance
+     * @return bool
+     */
+    private function isValidBalance($balance): bool
+    {
+        if ($balance === null) {
+            return false;
+        }
+
+        // Convert to integer for validation
+        $intBalance = (int) $balance;
+
+        // Check if negative (invalid for unsigned columns)
+        // The database column is unsignedBigInteger, so negative values cannot be stored
+        if ($intBalance < 0) {
+            return false;
+        }
+
+        return true;
     }
 }

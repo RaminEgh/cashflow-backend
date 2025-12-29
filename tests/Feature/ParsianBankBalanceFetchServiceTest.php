@@ -62,7 +62,7 @@ it('fetches and stores balances for all Parsian Bank deposits', function () {
 
     $deposit1->refresh();
     expect($deposit1->balance)->toBe(152216359360)
-        ->and($deposit1->balance_last_synced_at)->not->toBeNull();
+        ->and($deposit1->balance_synced_at)->not->toBeNull();
 });
 
 it('skips deposits that already have balance for today', function () {

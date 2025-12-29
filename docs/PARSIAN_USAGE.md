@@ -127,7 +127,8 @@ class FetchParsianBalance implements ShouldQueue
         // ذخیره موجودی
         $this->deposit->update([
             'balance' => $balanceInfo['balance'],
-            'balance_last_synced_at' => now()
+            'balance_synced_at' => now(),
+            'last_balance_sync_success' => true
         ]);
     }
 }

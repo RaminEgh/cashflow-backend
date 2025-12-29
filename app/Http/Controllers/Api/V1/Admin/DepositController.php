@@ -10,6 +10,7 @@ use App\Http\Requests\Admin\Organ\UpdateOrganRequest;
 use App\Http\Resources\V1\Admin\Deposit\DepositCollection;
 use App\Http\Resources\V1\Admin\Deposit\DepositResource;
 use App\Http\Resources\V1\Common\PaginationCollection;
+use App\Jobs\FetchBankAccountBalance;
 use App\Models\Deposit;
 use App\Services\DepositService;
 use Illuminate\Http\JsonResponse;
@@ -78,5 +79,19 @@ class DepositController extends Controller
         $this->depositService->delete($deposit);
 
         return Helper::successResponse('موفقیت آمیز');
+    }
+
+    public function updateBalance(Deposit $deposit): JsonResponse
+    {
+        FetchBankAccountBalance::dispatch($deposit)
+            ->tags(['balance-update', 'api', 'admin', "deposit:{$deposit->number}"]);
+
+        return Helper::successResponse(
+            __('Balance update job dispatched successfully for deposit: :number', ['number' => $deposit->number]),
+            [
+                'deposit_id' => $deposit->id,
+                'deposit_number' => $deposit->number,
+            ]
+        );
     }
 }

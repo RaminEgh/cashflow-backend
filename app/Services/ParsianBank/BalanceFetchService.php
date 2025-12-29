@@ -95,7 +95,8 @@ class BalanceFetchService
             // Update deposit with new balance
             $deposit->update([
                 'balance' => $balance,
-                'balance_last_synced_at' => $fetchedAt,
+                'balance_synced_at' => $fetchedAt,
+                'last_balance_sync_success' => true,
             ]);
 
             Log::info("Successfully fetched and stored balance for deposit {$deposit->number}", [
@@ -109,6 +110,11 @@ class BalanceFetchService
                 'fetched_at' => now(),
                 'status' => BalanceStatus::Fail->value,
                 'balance' => null,
+            ]);
+
+            // Update deposit to mark sync as failed
+            $deposit->update([
+                'last_balance_sync_success' => false,
             ]);
 
             Log::error("Failed to fetch balance for deposit {$deposit->number}", [

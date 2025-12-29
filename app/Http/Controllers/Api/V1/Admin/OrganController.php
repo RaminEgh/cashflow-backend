@@ -10,6 +10,7 @@ use App\Http\Resources\V1\Admin\Organ\OrganCollection;
 use App\Http\Resources\V1\Admin\Organ\OrganResource;
 use App\Http\Resources\V1\Admin\Organ\OrganWithDepositsAndAdminsResource;
 use App\Http\Resources\V1\Common\PaginationCollection;
+use App\Jobs\FetchBankAccountBalance;
 use App\Models\Organ;
 use App\Models\Role;
 use App\Models\User;
@@ -71,7 +72,7 @@ class OrganController extends Controller
     public function allocation(Organ $organ, Request $request): JsonResponse
     {
         $allocation = $organ->allocations()
-            ->when($request->year, fn ($query, $year) => $query->where('year', $year))
+            ->when($request->year, fn($query, $year) => $query->where('year', $year))
             ->first();
 
         if (! $allocation) {
@@ -154,5 +155,28 @@ class OrganController extends Controller
         $organ->delete();
 
         return Helper::successResponse('موفقیت آمیز');
+    }
+
+    public function updateBalances(Organ $organ): JsonResponse
+    {
+        $deposits = $organ->deposits;
+
+        if ($deposits->isEmpty()) {
+            return Helper::errorResponse(__('No deposits found for this organ'), [], 404);
+        }
+
+        foreach ($deposits as $deposit) {
+            FetchBankAccountBalance::dispatch($deposit)
+                ->tags(['balance-update', 'api', 'admin', "organ:{$organ->slug}"]);
+        }
+
+        return Helper::successResponse(
+            __('Balance update jobs dispatched successfully for organ: :name', ['name' => $organ->name]),
+            [
+                'organ_id' => $organ->id,
+                'organ_name' => $organ->name,
+                'deposits_count' => $deposits->count(),
+            ]
+        );
     }
 }

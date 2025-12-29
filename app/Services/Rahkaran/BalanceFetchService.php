@@ -38,14 +38,15 @@ class BalanceFetchService
                     $rahkaranFetchedDate = (Carbon::parse($rahkaranBalance['job_Date']))->toDateTimeString();
 
                     if (
-                        ! $deposit->rahkaran_balance_last_synced_at ||
-                        ! Carbon::parse($deposit->rahkaran_balance_last_synced_at)->eq(Carbon::parse($rahkaranFetchedDate))
+                        ! $deposit->rahkaran_synced_at ||
+                        ! Carbon::parse($deposit->rahkaran_synced_at)->eq(Carbon::parse($rahkaranFetchedDate))
                     ) {
                         $deposit->update([
                             'balance' => null,
-                            'balance_last_synced_at' => null,
-                            'rahkaran_balance_last_synced_at' => $rahkaranFetchedDate,
+                            'balance_synced_at' => null,
+                            'rahkaran_synced_at' => $rahkaranFetchedDate,
                             'rahkaran_balance' => $rahkaranBalance['balance'],
+                            'last_rahkaran_sync_success' => isset($rahkaranBalance['balance']) && $rahkaranBalance['balance'] !== null,
                         ]);
                     }
                     $exists = Balance::where('deposit_id', $deposit->id)
@@ -64,7 +65,7 @@ class BalanceFetchService
                         ]);
                     }
                 } catch (\Throwable $e) {
-                    Log::error("Error fetching/storing balance for deposit {$deposit->number}: ".$e->getMessage());
+                    Log::error("Error fetching/storing balance for deposit {$deposit->number}: " . $e->getMessage());
 
                     continue;
                 }

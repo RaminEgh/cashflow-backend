@@ -60,4 +60,17 @@ enum UserType: int
             default => self::Unknown,
         };
     }
+
+    /**
+     * Get the Persian label for the user type.
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Unknown => 'نامشخص',
+            self::Admin => 'ادمین',
+            self::Organ => 'سازمان',
+            self::General => 'عمومی',
+        };
+    }
 }

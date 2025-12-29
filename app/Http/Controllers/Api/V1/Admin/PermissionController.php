@@ -53,9 +53,12 @@ class PermissionController extends Controller
     {
         $permission->update(['description' => $request->description]);
 
-        return Helper::successResponse(__('crud.d_edited', ['source' => __('sources.permission'), 'name' => $permission->label], [
-            'permission' => new PermissionResource($permission),
-        ]));
+        return Helper::successResponse(
+            __('crud.d_edited', ['source' => __('sources.permission'), 'name' => $permission->label]),
+            [
+                'permission' => new PermissionResource($permission),
+            ]
+        );
     }
 
     /**

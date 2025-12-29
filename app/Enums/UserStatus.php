@@ -52,4 +52,16 @@ enum UserStatus: int
             self::Blocked => 'blocked',
         };
     }
+
+    /**
+     * Get the Persian label for the user status.
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::Inactive => 'غیرفعال',
+            self::Active => 'فعال',
+            self::Blocked => 'مسدود',
+        };
+    }
 }

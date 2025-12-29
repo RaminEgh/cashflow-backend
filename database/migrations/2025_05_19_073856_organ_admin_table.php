@@ -12,13 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('organ_admin', function (Blueprint $table) {
-            $table->unsignedBigInteger('organ_id');
-            $table->unsignedBigInteger('admin_id'); // user_id
+            $table->foreignId('organ_id')->constrained('organs')->onDelete('restrict');
+            $table->foreignId('admin_id')->constrained('users')->onDelete('restrict');
             $table->primary(['organ_id', 'admin_id']);
-            $table->foreign('organ_id')->references('id')->on('organs')->onDelete('cascade');
-            $table->foreign('admin_id')->references('id')->on('users')->onDelete('cascade');
-            $table->unsignedBigInteger('created_by');
-            $table->unsignedBigInteger('updated_by');
+            $table->foreignId('created_by')->constrained('users')->onDelete('restrict');
+            $table->foreignId('updated_by')->constrained('users')->onDelete('restrict');
             $table->timestamps();
         });
     }

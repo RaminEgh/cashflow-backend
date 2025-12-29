@@ -53,6 +53,11 @@ class AdminController extends Controller
                 Cache::forget(CacheKey::ROLE.$role->slug.'_'.$user->id);
             }
 
+            $user->update([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+            ]);
+
             return Helper::successResponse('نقش ها با موفقیت به کاربر داده شد');
         }
 

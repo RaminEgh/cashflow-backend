@@ -1,0 +1,27 @@
+# Project-Specific Rules Override
+
+# These rules override or supplement the default rules in CLAUDE.md
+
+## Laravel Pint Code Formatter
+
+**DO NOT run Laravel Pint manually** - This project has a pre-commit Git hook (`.git/hooks/pre-commit`) that automatically runs Laravel Pint on staged PHP files before each commit. The hook will format the code and re-stage the formatted files automatically.
+
+- Code formatting is handled automatically by the pre-commit hook, so manual Pint execution is not needed.
+- Do not run `vendor/bin/pint` or `vendor/bin/pint --dirty` manually.
+- The pre-commit hook ensures all staged PHP files are properly formatted before commits.
+
+## Testing
+
+**DO NOT write test files unless explicitly requested** - Only create or modify test files when the user explicitly asks you to write tests, create tests, or mentions testing in their request.
+
+- Do not automatically create test files when implementing new features or fixing bugs.
+- Do not suggest writing tests unless the user asks about testing.
+- If the user wants tests, they will explicitly request them.
+
+## Documentation
+
+**DO NOT create or write documentation files unless explicitly requested** - Only create or modify documentation files (like `.md` files, README updates, etc.) when the user explicitly asks you to write documentation, create docs, or mentions documentation in their request.
+
+- Do not automatically create documentation files when implementing new features or fixing bugs.
+- Do not suggest writing documentation unless the user asks about it.
+- If the user wants documentation, they will explicitly request it.

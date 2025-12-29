@@ -45,7 +45,9 @@ class BankController extends Controller
 
     public function update(UpdateBankRequest $request, Bank $bank)
     {
-        //
+        $bank->update($request->validated());
+
+        return Helper::successResponse(__('crud.d_edited', ['source' => __('sources.bank'), 'name' => $bank->name]), new BankResource($bank));
     }
 
     public function destroy(Bank $bank)

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin\User;
 
+use App\Enums\UserType;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreUserRequest extends FormRequest
@@ -26,7 +27,7 @@ class StoreUserRequest extends FormRequest
             'last_name' => 'required|min:3|max:64',
             'email' => 'required|email|unique:users',
             'password' => 'required|min:8|max:64',
-            'type' => 'nullable|in:2',
+            'type' => 'nullable|in:'.UserType::Organ->value.','.UserType::General->value,
         ];
     }
 }

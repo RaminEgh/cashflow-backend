@@ -10,54 +10,30 @@ use App\Http\Requests\Admin\Organ\UpdateOrganRequest;
 use App\Http\Resources\V1\Admin\Deposit\DepositCollection;
 use App\Http\Resources\V1\Admin\Deposit\DepositResource;
 use App\Http\Resources\V1\Common\PaginationCollection;
-use App\Jobs\FetchBankAccountBalance;
 use App\Models\Deposit;
+use App\Services\DepositService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class DepositController extends Controller
 {
+    public function __construct(
+        private readonly DepositService $depositService
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
-        $query = Deposit::query();
+        $filters = [
+            'organ_id' => $request->organ_id,
+            'bank_id' => $request->bank_id,
+            'sort' => $request->sort,
+            'sort_by' => $request->sort_by,
+            'order' => $request->order,
+            'sort_order' => $request->sort_order,
+        ];
 
-        // Support direct query parameters for filtering
-        if ($request->has('organ_id')) {
-            $query->where('organ_id', $request->organ_id);
-        }
-
-        if ($request->has('bank_id')) {
-            $query->where('bank_id', $request->bank_id);
-        }
-
-        // Handle sorting - support both 'sort' and 'sort_by'
-        $sortField = $request->sort ?? $request->sort_by;
-        $sortOrder = $request->order ?? $request->sort_order ?? 'ASC';
-
-        if ($sortField) {
-            // Handle relationship-based sorting (e.g., organ.name)
-            if (str_contains($sortField, '.')) {
-                [$relation, $field] = explode('.', $sortField, 2);
-
-                if ($relation === 'organ') {
-                    $query->join('organs', 'deposits.organ_id', '=', 'organs.id')
-                        ->select('deposits.*')
-                        ->orderBy("organs.{$field}", $sortOrder);
-                } elseif ($relation === 'bank') {
-                    $query->join('banks', 'deposits.bank_id', '=', 'banks.id')
-                        ->select('deposits.*')
-                        ->orderBy("banks.{$field}", $sortOrder);
-                }
-            } else {
-                $query->orderBy($sortField, $sortOrder);
-            }
-        } else {
-            $query->latest();
-        }
-
-        $perPage = $request->perPage ?? $request->per_page ?? 500;
-        $deposits = $query->paginate($perPage);
+        $perPage = $request->perPage ?? $request->per_page ?? 10;
+        $deposits = $this->depositService->getPaginated($filters, $perPage, $request->page ?? 1);
 
         return Helper::successResponse(null, [
             'list' => new DepositCollection($deposits),
@@ -67,41 +43,39 @@ class DepositController extends Controller
 
     public function store(StoreDepositRequest $request): JsonResponse
     {
-        $deposit = Deposit::create([...$request->validated(), 'created_by' => $request->user()->id, 'updated_by' => $request->user()->id]);
+        $deposit = $this->depositService->create($request->validated(), $request->user()->id);
 
         return Helper::successResponse(__('crud.d_created', ['source' => __('sources.organ'), 'name' => "حساب $deposit->number ساخته شد"]), new DepositResource($deposit));
     }
 
     public function show(Deposit $deposit): JsonResponse
     {
+        $deposit = $this->depositService->getById($deposit->id) ?? $deposit->load(['organ', 'bank', 'balances']);
+
         return Helper::successResponse(null, new DepositResource($deposit));
     }
 
     public function updateBankingApiAccess(UpdateDepositBankingApiAccessRequest $request, Deposit $deposit): JsonResponse
     {
-        DB::transaction(function () use ($request, $deposit) {
-            $deposit->has_access_banking_api = $request->boolean('has_access_banking_api');
-            $deposit->updated_by = $request->user()->id;
-            $deposit->save();
-
-            if ($deposit->has_access_banking_api) {
-                FetchBankAccountBalance::dispatch($deposit);
-            }
-        });
+        $deposit = $this->depositService->updateBankingApiAccess(
+            $deposit,
+            $request->boolean('has_access_banking_api'),
+            $request->user()->id
+        );
 
         return Helper::successResponse('وضعیت دسترسی به API بانکی با موفقیت ویرایش شد.');
     }
 
     public function update(UpdateOrganRequest $request, Deposit $deposit): JsonResponse
     {
-        $deposit->update($request->validated());
+        $deposit = $this->depositService->update($deposit, $request->validated(), $request->user()->id);
 
         return Helper::successResponse('سازمان با موفقیت ویرایش شد.');
     }
 
     public function destroy(Deposit $deposit): JsonResponse
     {
-        $deposit->delete();
+        $this->depositService->delete($deposit);
 
         return Helper::successResponse('موفقیت آمیز');
     }

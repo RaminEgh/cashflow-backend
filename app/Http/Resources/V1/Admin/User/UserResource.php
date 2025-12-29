@@ -19,8 +19,16 @@ class UserResource extends JsonResource
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
             'email' => $this->email,
-            'type' => $this->getTypeName(),
-            'status' => $this->getStatusName(),
+            'status' => [
+                'id' => $this->status->value,
+                'value' => $this->status->name(),
+                'label' => $this->status->label(),
+            ],
+            'type' => [
+                'id' => $this->type->value,
+                'value' => $this->type->name(),
+                'label' => $this->type->label(),
+            ],
             'log' => new UserLogResource($this->sessions()->first()),
         ];
     }

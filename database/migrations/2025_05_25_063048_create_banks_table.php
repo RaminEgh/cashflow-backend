@@ -17,8 +17,9 @@ return new class extends Migration
             $table->string('en_name');
             $table->string('slug');
             $table->string('logo')->nullable();
-            $table->unsignedBigInteger('created_by');
-            $table->unsignedBigInteger('updated_by');
+            $table->string('color', 16)->nullable();
+            $table->foreignId('created_by')->constrained('users')->onDelete('restrict');
+            $table->foreignId('updated_by')->constrained('users')->onDelete('restrict');
             $table->timestamps();
         });
     }

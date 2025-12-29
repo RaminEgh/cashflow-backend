@@ -14,8 +14,8 @@ return new class extends Migration
     {
         Schema::create('deposits', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('organ_id');
-            $table->unsignedBigInteger('bank_id');
+            $table->foreignId('organ_id')->constrained('organs')->onDelete('restrict');
+            $table->foreignId('bank_id')->constrained('banks')->onDelete('cascade');
             $table->mediumInteger('branch_code');
             $table->string('branch_name');
             $table->string('number');
@@ -24,12 +24,12 @@ return new class extends Migration
             $table->timestamp('balance_last_synced_at')->nullable();
             $table->timestamp('rahkaran_balance_last_synced_at')->nullable();
             $table->string('sheba')->nullable();
-            $table->enum('type', DepositType::values());
+            $table->enum('type', array_map('strval', DepositType::values()));
             $table->string('currency');
             $table->string('description')->nullable();
             $table->boolean('has_access_banking_api')->default(false);
-            $table->unsignedBigInteger('created_by');
-            $table->unsignedBigInteger('updated_by');
+            $table->foreignId('created_by')->constrained('users')->onDelete('restrict');
+            $table->foreignId('updated_by')->constrained('users')->onDelete('restrict');
             $table->timestamps();
         });
     }

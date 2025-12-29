@@ -55,13 +55,23 @@ class RoleController extends Controller
 
     public function update(UpdateRoleRequest $request, Role $role): JsonResponse
     {
-        $role->permissions()->syncWithPivotValues($request->permissions, ['updated_at' => now()]);
-        $permissions = Permission::WhereIn('id', $request->permissions);
+        $role->permissions()->syncWithPivotValues($request->permissions, [
+            'updated_by' => auth()->user()->id,
+            'updated_at' => now(),
+        ]);
+        $permissions = Permission::whereIn('id', $request->permissions);
         foreach ($role->users()->get() as $user) {
             foreach ($permissions->get() as $permission) {
                 Cache::forget(CacheKey::ROLES_PERMISSION.$permission->slug.'_'.$user->id);
             }
         }
+
+        $role->update([
+            'slug' => $request->slug,
+            'label' => $request->label,
+            'description' => $request->description,
+            'updated_by' => auth()->user()->id,
+        ]);
 
         return Helper::successResponse('سمت با موفقیت ویرایش شد.');
     }

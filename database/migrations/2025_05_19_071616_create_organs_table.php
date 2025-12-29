@@ -20,8 +20,8 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->string('phone')->nullable();
             $table->string('background')->nullable();
-            $table->unsignedBigInteger('created_by');
-            $table->unsignedBigInteger('updated_by');
+            $table->foreignId('created_by')->constrained('users')->onDelete('restrict');
+            $table->foreignId('updated_by')->constrained('users')->onDelete('restrict');
             $table->timestamps();
         });
     }

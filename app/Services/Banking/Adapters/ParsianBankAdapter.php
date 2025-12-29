@@ -50,12 +50,19 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         // Try to get token from cache first
         $environment = $this->shouldUseSandbox() ? 'sandbox' : 'production';
-        $cacheKey = "parsian_bank_token_{$environment}_{$clientId}";
+
+        // Build cache key based on organ slug if available, otherwise use client ID
+        if ($this->organSlug) {
+            $cacheKey = "parsian_bank_token_{$environment}_{$this->organSlug}";
+        } else {
+            $cacheKey = "parsian_bank_token_{$environment}_{$clientId}";
+        }
 
         $cachedToken = Cache::get($cacheKey);
         if ($cachedToken) {
             Log::debug('Using cached Parsian Bank token', [
                 'environment' => $environment,
+                'organSlug' => $this->organSlug,
                 'cache_key' => $cacheKey,
                 'token_preview' => substr($cachedToken, 0, 20) . '...',
             ]);
@@ -95,6 +102,8 @@ class ParsianBankAdapter implements BankAdapterInterface
 
                 Log::info('Successfully obtained and cached Parsian Bank token', [
                     'environment' => $environment,
+                    'organSlug' => $this->organSlug,
+                    'cache_key' => $cacheKey,
                     'expires_in' => $expiresIn,
                     'cache_duration' => $cacheDuration,
                 ]);
@@ -158,6 +167,8 @@ class ParsianBankAdapter implements BankAdapterInterface
 
                 Log::info('Parsian Bank authentication succeeded with fallback URL and cached', [
                     'fallback_url' => $fallbackUrl,
+                    'organSlug' => $this->organSlug,
+                    'cache_key' => $cacheKey,
                     'expires_in' => $expiresIn,
                     'cache_duration' => $cacheDuration,
                 ]);

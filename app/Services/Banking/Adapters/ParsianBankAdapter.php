@@ -269,8 +269,27 @@ class ParsianBankAdapter implements BankAdapterInterface
         if ($this->organSlug) {
             $envKey = $this->buildOrganEnvKey('PARSIAN_CLIENT_ID');
 
-            // Try multiple methods to read env variable in runtime
-            $clientId = getenv($envKey) ?: ($_ENV[$envKey] ?? env($envKey));
+            // Read env variable using string literal to ensure it works
+            // Try multiple methods: getenv with string, $_ENV array, env() helper
+            $clientId = null;
+
+            // Method 1: Use getenv with the built key as string
+            $clientId = getenv($envKey);
+
+            // Method 2: Try $_ENV superglobal
+            if (! $clientId && isset($_ENV[$envKey])) {
+                $clientId = $_ENV[$envKey];
+            }
+
+            // Method 3: Try env() helper with variable
+            if (! $clientId) {
+                $clientId = env($envKey);
+            }
+
+            // Method 4: Fallback to hardcoded env() call based on organ slug
+            if (! $clientId) {
+                $clientId = $this->getHardcodedClientId();
+            }
 
             Log::info('Getting Client ID for organ', [
                 'organSlug' => $this->organSlug,
@@ -278,7 +297,9 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'env_value' => $clientId ?: 'NOT FOUND',
                 'env_value_length' => $clientId ? strlen($clientId) : 0,
                 'getenv_result' => getenv($envKey) ?: 'NOT FOUND',
-                'env_result' => env($envKey) ?: 'NOT FOUND',
+                'env_var_result' => ($_ENV[$envKey] ?? null) ?: 'NOT FOUND',
+                'env_helper_result' => env($envKey) ?: 'NOT FOUND',
+                'hardcoded_result' => $this->getHardcodedClientId() ?: 'NOT FOUND',
                 'fallback_to_default' => ! $clientId,
             ]);
 
@@ -306,8 +327,27 @@ class ParsianBankAdapter implements BankAdapterInterface
         if ($this->organSlug) {
             $envKey = $this->buildOrganEnvKey('PARSIAN_CLIENT_SECRET');
 
-            // Try multiple methods to read env variable in runtime
-            $clientSecret = getenv($envKey) ?: ($_ENV[$envKey] ?? env($envKey));
+            // Read env variable using string literal to ensure it works
+            // Try multiple methods: getenv with string, $_ENV array, env() helper
+            $clientSecret = null;
+
+            // Method 1: Use getenv with the built key as string
+            $clientSecret = getenv($envKey);
+
+            // Method 2: Try $_ENV superglobal
+            if (! $clientSecret && isset($_ENV[$envKey])) {
+                $clientSecret = $_ENV[$envKey];
+            }
+
+            // Method 3: Try env() helper with variable
+            if (! $clientSecret) {
+                $clientSecret = env($envKey);
+            }
+
+            // Method 4: Fallback to hardcoded env() call based on organ slug
+            if (! $clientSecret) {
+                $clientSecret = $this->getHardcodedClientSecret();
+            }
 
             Log::info('Getting Client Secret for organ', [
                 'organSlug' => $this->organSlug,
@@ -315,7 +355,9 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'env_value_exists' => (bool) $clientSecret,
                 'env_value_preview' => $clientSecret ? $this->maskSecret($clientSecret) : 'NOT FOUND',
                 'getenv_result' => getenv($envKey) ? 'FOUND' : 'NOT FOUND',
-                'env_result' => env($envKey) ? 'FOUND' : 'NOT FOUND',
+                'env_var_result' => (isset($_ENV[$envKey]) && $_ENV[$envKey]) ? 'FOUND' : 'NOT FOUND',
+                'env_helper_result' => env($envKey) ? 'FOUND' : 'NOT FOUND',
+                'hardcoded_result' => $this->getHardcodedClientSecret() ? 'FOUND' : 'NOT FOUND',
                 'fallback_to_default' => ! $clientSecret,
             ]);
 
@@ -333,6 +375,40 @@ class ParsianBankAdapter implements BankAdapterInterface
         ]);
 
         return $defaultClientSecret;
+    }
+
+    /**
+     * Get hardcoded Client ID based on organ slug
+     * Uses hardcoded env() calls as fallback
+     */
+    protected function getHardcodedClientId(): ?string
+    {
+        if (! $this->organSlug) {
+            return null;
+        }
+
+        return match (strtolower($this->organSlug)) {
+            'shenel' => env('SHENEL_PARSIAN_CLIENT_ID'),
+            'arzesh' => env('ARZESH_PARSIAN_CLIENT_ID'),
+            default => null,
+        };
+    }
+
+    /**
+     * Get hardcoded Client Secret based on organ slug
+     * Uses hardcoded env() calls as fallback
+     */
+    protected function getHardcodedClientSecret(): ?string
+    {
+        if (! $this->organSlug) {
+            return null;
+        }
+
+        return match (strtolower($this->organSlug)) {
+            'shenel' => env('SHENEL_PARSIAN_CLIENT_SECRET'),
+            'arzesh' => env('ARZESH_PARSIAN_CLIENT_SECRET'),
+            default => null,
+        };
     }
 
     /**

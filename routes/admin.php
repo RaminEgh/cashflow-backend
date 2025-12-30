@@ -127,6 +127,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['is-admin']], function () {
         Route::get('/by-prefix', [SettingController::class, 'getByPrefix'])->middleware('can:' . AdminPermissionKey::SETTING_BY_PREFIX);
         Route::delete('/by-prefix', [SettingController::class, 'deleteByPrefix'])->middleware('can:' . AdminPermissionKey::SETTING_DELETE_BY_PREFIX);
         Route::post('/clear-cache', [SettingController::class, 'clearCache'])->middleware('can:' . AdminPermissionKey::SETTING_CLEAR_CACHE);
+        Route::get('/env', [SettingController::class, 'getEnvVariables'])->middleware('can:' . AdminPermissionKey::SETTING_LIST);
     });
 
     Route::group(['prefix' => 'timeline', 'middleware' => ['can:' . AdminPermissionKey::TIMELINE]], function () {

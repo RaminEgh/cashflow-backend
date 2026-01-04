@@ -45,6 +45,12 @@ class ParsianBankAdapter implements BankAdapterInterface
         $clientId = $this->getClientId();
         $clientSecret = $this->getClientSecret();
 
+        Log::info('getAccessToken called', [
+            'organ_slug' => $this->organSlug,
+            'has_client_id' => ! empty($clientId),
+            'has_client_secret' => ! empty($clientSecret),
+        ]);
+
         if (! $clientId || ! $clientSecret) {
             throw new \Exception('Parsian Bank client credentials not configured');
         }
@@ -57,15 +63,21 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         $cachedToken = Cache::get($cacheKey);
         if ($cachedToken) {
+            Log::info('Using cached token from Parsian Bank', [
+                'organ_slug' => $this->organSlug,
+                'cache_key' => $cacheKey,
+            ]);
+
             return $cachedToken;
         }
 
         try {
-            Log::info('Getting token from Parsian Bank', [
+            $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? 'unknown';
+            Log::info('Getting new token from Parsian Bank', [
                 'organ_slug' => $this->organSlug,
-                'deposit_number' => $this->credentials['number'],
+                'account_number' => $accountNumber,
                 'client_id' => $clientId,
-                'client_secret' => $clientSecret,
+                'client_secret' => $this->maskSecret($clientSecret),
                 'url' => $this->getOAuthTokenUrl(),
             ]);
             $response = Http::timeout(10)
@@ -84,6 +96,12 @@ class ParsianBankAdapter implements BankAdapterInterface
                 $cacheDuration = max(1, $expiresIn - 60); // 60 seconds buffer
 
                 Cache::put($cacheKey, $token, $cacheDuration);
+
+                Log::info('Successfully retrieved and cached token from Parsian Bank', [
+                    'organ_slug' => $this->organSlug,
+                    'expires_in' => $expiresIn,
+                    'cache_duration' => $cacheDuration,
+                ]);
 
                 return $token;
             } else {

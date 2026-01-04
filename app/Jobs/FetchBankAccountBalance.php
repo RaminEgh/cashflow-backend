@@ -78,13 +78,10 @@ class FetchBankAccountBalance implements ShouldQueue
         }
 
         Log::info("Starting to fetch balances for deposit", [
-            'deposit_id' => $this->deposit->id,
             'deposit_number' => $this->deposit->number,
-            'organ_id' => $this->deposit->organ->id,
             'organ_slug' => $this->deposit->organ->slug,
-            'organ_name' => $this->deposit->organ->name ?? null,
-            'bank_id' => $this->deposit->bank->id,
             'bank_slug' => $this->deposit->bank->slug,
+            'log_number' => 1
         ]);
 
         $balance = null;
@@ -97,11 +94,8 @@ class FetchBankAccountBalance implements ShouldQueue
         if ($this->shouldFetchBalanceFromBankApi()) {
             try {
                 Log::info("Attempting to fetch bank balance", [
-                    'deposit_id' => $this->deposit->id,
-                    'deposit_number' => $this->deposit->number,
-                    'organ_slug' => $this->deposit->organ->slug,
-                    'organ_name' => $this->deposit->organ->name ?? null,
-                    'bank_slug' => $this->deposit->bank->slug,
+                    'message' => 'Attempting to fetch bank balance',
+                    'log_number' => 2
                 ]);
 
                 $adapter = $bankFactory->make($this->deposit->bank->slug);
@@ -114,29 +108,23 @@ class FetchBankAccountBalance implements ShouldQueue
                     $balance = (int) $rawBalance;
                     $balanceStatus = BalanceStatus::Success;
                     Log::info("Successfully fetched bank balance", [
-                        'deposit_id' => $this->deposit->id,
                         'deposit_number' => $this->deposit->number,
                         'organ_slug' => $this->deposit->organ->slug,
-                        'organ_name' => $this->deposit->organ->name ?? null,
                         'balance' => $balance,
                     ]);
                 } else {
                     $balanceStatus = BalanceStatus::Fail;
                     Log::warning("Invalid bank balance", [
-                        'deposit_id' => $this->deposit->id,
                         'deposit_number' => $this->deposit->number,
                         'organ_slug' => $this->deposit->organ->slug,
-                        'organ_name' => $this->deposit->organ->name ?? null,
                         'raw_balance' => $rawBalance,
                         'reason' => 'negative or out of range',
                     ]);
                 }
             } catch (Throwable $e) {
                 Log::error("Failed to fetch bank balance", [
-                    'deposit_id' => $this->deposit->id,
                     'deposit_number' => $this->deposit->number,
                     'organ_slug' => $this->deposit->organ->slug,
-                    'organ_name' => $this->deposit->organ->name ?? null,
                     'error' => $e->getMessage(),
                 ]);
             }
@@ -252,21 +240,15 @@ class FetchBankAccountBalance implements ShouldQueue
         // Log the result (success or failure)
         if ($balanceStatus === BalanceStatus::Fail && $rahkaranStatus === BalanceStatus::Fail) {
             Log::warning("Failed to fetch both bank and Rahkaran balances", [
-                'deposit_id' => $this->deposit->id,
                 'deposit_number' => $this->deposit->number,
-                'organ_id' => $this->deposit->organ->id,
                 'organ_slug' => $this->deposit->organ->slug,
-                'organ_name' => $this->deposit->organ->name ?? null,
                 'bank_balance_status' => $balanceStatus->value,
                 'rahkaran_balance_status' => $rahkaranStatus->value,
             ]);
         } else {
             Log::info("Successfully updated balances", [
-                'deposit_id' => $this->deposit->id,
                 'deposit_number' => $this->deposit->number,
-                'organ_id' => $this->deposit->organ->id,
                 'organ_slug' => $this->deposit->organ->slug,
-                'organ_name' => $this->deposit->organ->name ?? null,
                 'bank_balance' => $balance,
                 'rahkaran_balance' => $rahkaranBalance,
                 'bank_balance_status' => $balanceStatus->value,

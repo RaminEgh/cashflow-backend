@@ -87,7 +87,7 @@ class DepositController extends Controller
             ->tags(['balance-update', 'api', 'admin', "deposit:{$deposit->number}"]);
 
         return Helper::successResponse(
-            __('Balance update job dispatched successfully for deposit: :number', ['number' => $deposit->number]),
+            "درخواست به‌روزرسانی موجودی برای حساب {$deposit->number} با موفقیت ارسال شد.",
             [
                 'deposit_id' => $deposit->id,
                 'deposit_number' => $deposit->number,

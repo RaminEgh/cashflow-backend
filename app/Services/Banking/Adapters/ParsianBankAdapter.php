@@ -22,11 +22,11 @@ class ParsianBankAdapter implements BankAdapterInterface
     public function setAccount(array $credentials): BankAdapterInterface
     {
         $this->credentials = $credentials;
-        $this->organSlug = $credentials['organSlug'] ?? null;
+        $this->organSlug = $credentials['organSlug'];
 
         Log::notice('ParsianBankAdapter setAccount called', [
             'organSlug_received' => $this->organSlug,
-            'accountNumber' => $credentials['accountNumber'] ?? $credentials['number'] ?? null,
+            'accountNumber' => $credentials['accountNumber'] ?? $credentials['number'],
             'all_credentials_keys' => array_keys($credentials),
         ]);
 
@@ -70,7 +70,7 @@ class ParsianBankAdapter implements BankAdapterInterface
             'environment' => $environment,
             'organSlug' => $this->organSlug,
             'client_id' => $clientId,
-            'client_secret' => $this->maskSecret($clientSecret),
+            'client_secret' => $clientSecret,
         ]);
 
         $cachedToken = Cache::get($cacheKey);
@@ -88,13 +88,12 @@ class ParsianBankAdapter implements BankAdapterInterface
             return $cachedToken;
         }
 
-        // Try sandbox first, then fallback to production
         $urls = [
             'production' => config('banks.parsian.oauth_token_url'),
             'sandbox' => config('banks.parsian.oauth_sandbox_token_url'),
         ];
 
-        
+
 
         $authUrl = $this->shouldUseSandbox() ? $urls['sandbox'] : $urls['production'];
         $lastException = null;
@@ -104,11 +103,20 @@ class ParsianBankAdapter implements BankAdapterInterface
             'environment' => $environment,
             'organSlug' => $this->organSlug,
             'client_id' => $clientId,
-            'client_secret' => $this->maskSecret($clientSecret),
+            'client_secret' => $clientSecret,
         ]);
 
         // Try primary URL first
         try {
+            $curlCommand = $this->generateCurlCommand($authUrl, $clientId, $clientSecret);
+            Log::info('Parsian Bank authentication curl command (primary URL)', [
+                'url' => $authUrl,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'curl_command' => $curlCommand,
+            ]);
+
             $response = Http::timeout(10)
                 ->withBasicAuth($clientId, $clientSecret)
                 ->asForm()
@@ -149,7 +157,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'url' => $authUrl,
                 'organSlug' => $this->organSlug,
                 'client_id' => $clientId,
-                'client_secret' => $this->maskSecret($clientSecret),
+                'client_secret' => $clientSecret,
                 'status' => $statusCode,
                 'response' => $responseBody,
                 'data' => $responseData,
@@ -167,7 +175,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'url' => $authUrl,
                 'organSlug' => $this->organSlug,
                 'client_id' => $clientId,
-                'client_secret' => $this->maskSecret($clientSecret),
+                'client_secret' => $clientSecret,
                 'error' => $e->getMessage(),
             ]);
         } catch (\Exception $e) {
@@ -176,7 +184,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'url' => $authUrl,
                 'organSlug' => $this->organSlug,
                 'client_id' => $clientId,
-                'client_secret' => $this->maskSecret($clientSecret),
+                'client_secret' => $clientSecret,
                 'error' => $e->getMessage(),
             ]);
         }
@@ -185,6 +193,15 @@ class ParsianBankAdapter implements BankAdapterInterface
         $fallbackUrl = $this->shouldUseSandbox() ? $urls['production'] : $urls['sandbox'];
 
         try {
+            $curlCommand = $this->generateCurlCommand($fallbackUrl, $clientId, $clientSecret);
+            Log::info('Parsian Bank authentication curl command (fallback URL)', [
+                'url' => $fallbackUrl,
+                'organSlug' => $this->organSlug,
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'curl_command' => $curlCommand,
+            ]);
+
             $response = Http::timeout(10)
                 ->withBasicAuth($clientId, $clientSecret)
                 ->asForm()
@@ -208,7 +225,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                     'fallback_url' => $fallbackUrl,
                     'organSlug' => $this->organSlug,
                     'client_id' => $clientId,
-                    'client_secret' => $this->maskSecret($clientSecret),
+                    'client_secret' => $clientSecret,
                     'cache_key' => $cacheKey,
                     'expires_in' => $expiresIn,
                     'cache_duration' => $cacheDuration,
@@ -226,7 +243,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'fallback_url' => $fallbackUrl,
                 'organSlug' => $this->organSlug,
                 'client_id' => $clientId,
-                'client_secret' => $this->maskSecret($clientSecret),
+                'client_secret' => $clientSecret,
                 'status' => $statusCode,
                 'response' => $responseBody,
                 'data' => $responseData,
@@ -242,7 +259,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'fallback_url' => $fallbackUrl,
                 'organSlug' => $this->organSlug,
                 'client_id' => $clientId,
-                'client_secret' => $this->maskSecret($clientSecret),
+                'client_secret' => $clientSecret,
                 'primary_error' => $lastException?->getMessage(),
                 'fallback_error' => $e->getMessage(),
             ]);
@@ -254,7 +271,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'fallback_url' => $fallbackUrl,
                 'organSlug' => $this->organSlug,
                 'client_id' => $clientId,
-                'client_secret' => $this->maskSecret($clientSecret),
+                'client_secret' => $clientSecret,
                 'primary_error' => $lastException?->getMessage(),
                 'fallback_error' => $e->getMessage(),
             ]);
@@ -326,7 +343,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'organSlug' => $this->organSlug,
                 'config_key' => "banks.parsian.{$configKey}",
                 'config_value_exists' => (bool) $clientSecret,
-                'config_value_preview' => $clientSecret ? $this->maskSecret($clientSecret) : 'NOT FOUND',
+                'config_value_preview' => $clientSecret,
                 'fallback_to_default' => ! $clientSecret,
             ]);
 
@@ -340,7 +357,7 @@ class ParsianBankAdapter implements BankAdapterInterface
         Log::info('Using default Client Secret (fallback)', [
             'organSlug' => $this->organSlug,
             'default_client_secret_exists' => (bool) $defaultClientSecret,
-            'default_client_secret_preview' => $defaultClientSecret ? $this->maskSecret($defaultClientSecret) : 'NOT FOUND',
+            'default_client_secret_preview' => $defaultClientSecret ?? 'NOT FOUND',
         ]);
 
         return $defaultClientSecret;
@@ -362,6 +379,23 @@ class ParsianBankAdapter implements BankAdapterInterface
         }
 
         return str_repeat('*', $length - 4) . substr($secret, -4);
+    }
+
+    /**
+     * Generate curl command for authentication request
+     */
+    protected function generateCurlCommand(string $url, string $clientId, string $clientSecret): string
+    {
+        $basicAuth = base64_encode("{$clientId}:{$clientSecret}");
+
+        $curlCommand = "curl -X POST '{$url}' \\\n";
+        $curlCommand .= "  -H 'Authorization: Basic {$basicAuth}' \\\n";
+        $curlCommand .= "  -H 'Content-Type: application/x-www-form-urlencoded' \\\n";
+        $curlCommand .= "  -d 'grant_type=client_credentials' \\\n";
+        $curlCommand .= "  -d 'client_id={$clientId}' \\\n";
+        $curlCommand .= "  -d 'client_secret={$clientSecret}'";
+
+        return $curlCommand;
     }
 
     /**

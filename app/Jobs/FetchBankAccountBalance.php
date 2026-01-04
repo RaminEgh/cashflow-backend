@@ -87,10 +87,16 @@ class FetchBankAccountBalance implements ShouldQueue
 
                 $rawBalance = $balanceData['balance'];
 
+
                 if ($this->isValidBalance($rawBalance)) {
                     $balance = (int) $rawBalance;
                     $balanceStatus = BalanceStatus::Success;
                 } else {
+                    Log::error('Invalid balance from bank API', [
+                        'balance_data' => $balanceData,
+                        'raw_balance' => $rawBalance,
+                        'is_valid' => $this->isValidBalance($rawBalance),
+                    ]);
                     $balanceStatus = BalanceStatus::Fail;
                 }
             } catch (Throwable $e) {

@@ -72,20 +72,22 @@ class ParsianBankAdapter implements BankAdapterInterface
         }
 
         try {
-            $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? 'unknown';
             Log::info('Getting new token from Parsian Bank', [
                 'organ_slug' => $this->organSlug,
-                'account_number' => $accountNumber,
                 'client_id' => $clientId,
-                'client_secret' => $this->maskSecret($clientSecret),
+                'client_secret' => $clientSecret,
                 'url' => $this->getOAuthTokenUrl(),
             ]);
-            $response = Http::timeout(10)
+            $response = Http::timeout(30)
                 ->withBasicAuth($clientId, $clientSecret)
                 ->asForm()
                 ->post($this->getOAuthTokenUrl(), [
                     'grant_type' => 'client_credentials',
                 ]);
+
+            Log::info('Response from Parsian Bank', [
+                'response' => $response->body(),
+            ]);
 
             if ($response->successful()) {
                 $tokenData = $response->json();

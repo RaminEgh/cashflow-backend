@@ -73,7 +73,13 @@ it('fetches bank balance via adapter when deposit has banking api access even if
         ->andReturnSelf();
     $adapter->shouldReceive('getBalance')
         ->once()
-        ->andReturn(12345);
+        ->andReturn([
+            'accountNumber' => '1234567890',
+            'balance' => 12345,
+            'todayDepositAmount' => 0,
+            'todayWithdrawAmount' => 0,
+            'currency' => 'IRR',
+        ]);
 
     $bankFactory = \Mockery::mock(BankAdapterFactory::class);
     $bankFactory->shouldReceive('make')

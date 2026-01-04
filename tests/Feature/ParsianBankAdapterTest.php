@@ -42,9 +42,15 @@ it('returns account balance when API call is successful', function () {
     $adapter = new ParsianBankAdapter;
     $adapter->setAccount(['accountNumber' => '85000005464007']);
 
-    $balance = $adapter->getBalance();
+    $balanceData = $adapter->getBalance();
 
-    expect($balance)->toBe(152216359360);
+    expect($balanceData)->toBe([
+        'accountNumber' => '85000005464007',
+        'balance' => 152216359360,
+        'todayDepositAmount' => 100,
+        'todayWithdrawAmount' => 0,
+        'currency' => 'IRR',
+    ]);
 
     Http::assertSent(function ($request) {
         return $request->url() === 'https://sandbox.parsian-bank.ir/channelServices/1.0/getAccountBalance'
@@ -73,7 +79,7 @@ it('returns full account balance information', function () {
     $adapter = new ParsianBankAdapter;
     $adapter->setAccount(['accountNumber' => '85000005464007']);
 
-    $balanceInfo = $adapter->getAccountBalance();
+    $balanceInfo = $adapter->getBalance();
 
     expect($balanceInfo)->toBe([
         'accountNumber' => '85000005464007',
@@ -124,10 +130,10 @@ it('throws exception when account is not found', function () {
     $adapter = new ParsianBankAdapter;
     $adapter->setAccount(['accountNumber' => '85000005464007']);
 
-    expect(fn() => $adapter->getAccountBalance())->toThrow('Account not found: 85000005464007');
+    expect(fn() => $adapter->getBalance())->toThrow('Account not found: 85000005464007');
 });
 
-it('handles missing optional fields in getAccountBalance', function () {
+it('handles missing optional fields in getBalance', function () {
     Http::fake([
         'sandbox.parsian-bank.ir/oauth2/token' => Http::response([
             'access_token' => 'test-token',
@@ -143,7 +149,7 @@ it('handles missing optional fields in getAccountBalance', function () {
     $adapter = new ParsianBankAdapter;
     $adapter->setAccount(['accountNumber' => '85000005464007']);
 
-    $balanceInfo = $adapter->getAccountBalance();
+    $balanceInfo = $adapter->getBalance();
 
     expect($balanceInfo)->toBe([
         'accountNumber' => '85000005464007',
@@ -173,7 +179,7 @@ it('converts balance to float correctly', function () {
     $adapter = new ParsianBankAdapter;
     $adapter->setAccount(['accountNumber' => '85000005464007']);
 
-    $balanceInfo = $adapter->getAccountBalance();
+    $balanceInfo = $adapter->getBalance();
 
     expect($balanceInfo['balance'])->toBe(152216359360)
         ->and($balanceInfo['todayDepositAmount'])->toBe(100)
@@ -291,9 +297,9 @@ it('successfully authenticates with Basic Auth and gets access token', function 
     $adapter = new ParsianBankAdapter;
     $adapter->setAccount(['accountNumber' => '85000005464007']);
 
-    $balance = $adapter->getBalance();
+    $balanceData = $adapter->getBalance();
 
-    expect($balance)->toBe(152216359360);
+    expect($balanceData['balance'])->toBe(152216359360);
 
     // Verify that requests were made (OAuth and balance)
     // The fact that we got a balance proves OAuth authentication worked

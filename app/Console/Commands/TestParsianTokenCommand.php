@@ -29,8 +29,8 @@ class TestParsianTokenCommand extends Command
         $this->info('Client Secret: '.substr($clientSecret, 0, 10).'...');
 
         // Test sandbox URL
-        $sandboxUrl = config('banks.parsian.oauth_sandbox_token_url', 'https://sandbox.parsian-bank.ir/oauth2/token');
-        $this->info("Testing Sandbox URL: {$sandboxUrl}");
+        $sandboxUrl = config('banks.parsian.oauth_token_url');
+        $this->info("Testing Sandbox URL: {$sandboxUrl}");  
 
         try {
             $response = Http::timeout(10)

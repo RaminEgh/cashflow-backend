@@ -68,7 +68,7 @@ class BalanceFetchService
             $balanceData = $adapter->setAccount([
                 'accountNumber' => $deposit->number,
                 'organSlug' => $deposit->organ?->slug,
-            ])->getAccountBalance();
+            ])->getBalance();
 
             $balance = (int) $balanceData['balance'];
             $fetchedAt = now();

@@ -19,19 +19,15 @@ class MellatBankAdapter implements BankAdapterInterface
         return $this;
     }
 
-    public function getBalance(): int
+    public function getBalance(): array
     {
+        $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? '';
+
         $response = Http::withToken($this->apiEndpoint)->post($this->apiEndpoint, [
             'number' => $this->credentials['number'],
         ]);
 
-        return (int) $response->json('data.current_balance');
-    }
-
-    public function getAccountBalance(): array
-    {
-        $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? '';
-        $balance = $this->getBalance();
+        $balance = (int) $response->json('data.current_balance');
 
         return [
             'accountNumber' => $accountNumber,

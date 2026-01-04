@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources\V1\Admin\User;
 
+use App\Enums\UserStatus;
+use App\Enums\UserType;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,20 +16,23 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $status = $this->status instanceof UserStatus ? $this->status : UserStatus::from($this->status ?? 0);
+        $type = $this->type instanceof UserType ? $this->type : UserType::from($this->type ?? 0);
+
         return [
             'id' => $this->id,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
             'email' => $this->email,
             'status' => [
-                'id' => $this->status->value,
-                'value' => $this->status->name(),
-                'label' => $this->status->label(),
+                'id' => $status->value,
+                'value' => $status->name(),
+                'label' => $status->label(),
             ],
             'type' => [
-                'id' => $this->type->value,
-                'value' => $this->type->name(),
-                'label' => $this->type->label(),
+                'id' => $type->value,
+                'value' => $type->name(),
+                'label' => $type->label(),
             ],
             'log' => new UserLogResource($this->sessions()->first()),
         ];

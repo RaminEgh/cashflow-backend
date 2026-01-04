@@ -23,9 +23,9 @@ class UpdateUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => 'required|min:3|max:64',
-            'last_name' => 'required|min:3|max:64',
-            'status' => 'required|in:'.implode(',', UserStatus::values()),
+            'first_name' => 'nullable|min:3|max:64',
+            'last_name' => 'nullable|min:3|max:64',
+            'status' => 'nullable|in:'.implode(',', UserStatus::values()),
             'national_code' => 'nullable|string|min:10|max:10',
             'email' => 'nullable|email',
         ];

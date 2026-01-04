@@ -24,7 +24,7 @@ class ParsianBankAdapter implements BankAdapterInterface
         $this->credentials = $credentials;
         $this->organSlug = $credentials['organSlug'] ?? null;
 
-        Log::debug('ParsianBankAdapter setAccount called', [
+        Log::notice('ParsianBankAdapter setAccount called', [
             'organSlug_received' => $this->organSlug,
             'accountNumber' => $credentials['accountNumber'] ?? $credentials['number'] ?? null,
             'all_credentials_keys' => array_keys($credentials),
@@ -68,7 +68,7 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         $cachedToken = Cache::get($cacheKey);
         if ($cachedToken) {
-            Log::debug('Using cached Parsian Bank token', [
+            Log::notice('Using cached Parsian Bank token', [
                 'cachedToken' => $cachedToken,
                 'environment' => $environment,
                 'organSlug' => $this->organSlug,
@@ -405,14 +405,36 @@ class ParsianBankAdapter implements BankAdapterInterface
             'note' => "Authenticated with organ: {$this->organSlug} (Client ID: {$clientId}), requesting account: {$accountNumber}",
         ]);
 
+        $requestBody = [
+            'accountNumber' => $accountNumber,
+        ];
+
+        $requestHeaders = [
+            'Authorization' => 'Bearer ' . $this->token,
+            'Content-Type' => 'application/json',
+        ];
+
+        Log::notice('Parsian Bank API Request Details', [
+            'method' => 'POST',
+            'url' => $url,
+            'headers' => array_merge($requestHeaders, ['Authorization' => 'Bearer ***']),
+            'body' => $requestBody,
+            'organSlug' => $this->organSlug,
+            'client_id' => $clientId,
+        ]);
+
         try {
             $response = Http::timeout(30)
-                ->withHeaders([
-                    'Authorization' => 'Bearer ' . $this->token,
-                    'Content-Type' => 'application/json',
-                ])->post($url, [
-                    'accountNumber' => $accountNumber,
-                ]);
+                ->withHeaders($requestHeaders)
+                ->post($url, $requestBody);
+
+            Log::notice('Parsian Bank API Response Details', [
+                'status' => $response->status(),
+                'headers' => $response->headers(),
+                'body' => $response->body(),
+                'json' => $response->json(),
+                'url' => $url,
+            ]);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::error('Connection timeout or error when fetching balance from Parsian Bank', [
                 'accountNumber' => $accountNumber,
@@ -524,11 +546,33 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         $url = $this->apiEndpoint . '/' . self::SERVICE_GET_ACCOUNT_BALANCE;
 
-        $response = Http::withHeaders([
+        $requestBody = [
+            'accountNumber' => $accountNumber,
+        ];
+
+        $requestHeaders = [
             'Authorization' => 'Bearer ' . $this->token,
             'Content-Type' => 'application/json',
-        ])->post($url, [
-            'accountNumber' => $accountNumber,
+        ];
+
+        Log::notice('Parsian Bank API Request Details (getAccountBalance)', [
+            'method' => 'POST',
+            'url' => $url,
+            'headers' => array_merge($requestHeaders, ['Authorization' => 'Bearer ***']),
+            'body' => $requestBody,
+            'organSlug' => $this->organSlug,
+            'client_id' => $clientId,
+        ]);
+
+        $response = Http::withHeaders($requestHeaders)
+            ->post($url, $requestBody);
+
+        Log::notice('Parsian Bank API Response Details (getAccountBalance)', [
+            'status' => $response->status(),
+            'headers' => $response->headers(),
+            'body' => $response->body(),
+            'json' => $response->json(),
+            'url' => $url,
         ]);
 
         if (! $response->successful()) {

@@ -85,7 +85,7 @@ class FetchBankAccountBalance implements ShouldQueue
                     'organSlug' => $this->deposit->organ->slug,
                 ])->getBalance();
 
-                $rawBalance = $balanceData['balance'] ?? null;
+                $rawBalance = $balanceData['balance'];
 
                 if ($this->isValidBalance($rawBalance)) {
                     $balance = (int) $rawBalance;

@@ -248,6 +248,12 @@ class ParsianBankAdapter implements BankAdapterInterface
     {
         $accountNumber = $this->credentials['accountNumber'] ?? $this->credentials['number'] ?? throw new \Exception('Account number is required');
 
+        Log::info('getBalance called', [
+            'organ_slug' => $this->organSlug,
+            'account_number' => $accountNumber,
+            'api_endpoint' => $this->apiEndpoint,
+        ]);
+
         $url = $this->apiEndpoint . '/' . self::SERVICE_GET_ACCOUNT_BALANCE;
 
         $requestBody = [
@@ -259,35 +265,84 @@ class ParsianBankAdapter implements BankAdapterInterface
             'Content-Type' => 'application/json',
         ];
 
+        Log::info('Sending balance request to Parsian Bank', [
+            'organ_slug' => $this->organSlug,
+            'url' => $url,
+            'account_number' => $accountNumber,
+            'has_token' => ! empty($this->token),
+        ]);
+
         try {
             $response = Http::timeout(30)
                 ->withHeaders($requestHeaders)
                 ->post($url, $requestBody);
+
+            Log::info('Received response from Parsian Bank', [
+                'organ_slug' => $this->organSlug,
+                'account_number' => $accountNumber,
+                'status_code' => $response->status(),
+                'response_body' => $response->body(),
+            ]);
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::error('Connection error when fetching balance from Parsian Bank', [
+                'organ_slug' => $this->organSlug,
+                'account_number' => $accountNumber,
+                'url' => $url,
+                'error' => $e->getMessage(),
+            ]);
+
             throw new \Exception('Connection timeout or error when fetching balance from Parsian Bank: ' . $e->getMessage());
         }
 
         $data = $response->json();
 
         if (! $response->successful()) {
+            Log::error('Failed to get balance from Parsian Bank', [
+                'organ_slug' => $this->organSlug,
+                'account_number' => $accountNumber,
+                'status_code' => $response->status(),
+                'response_body' => $response->body(),
+                'response_data' => $data,
+            ]);
+
             throw new \Exception($response->body() ?? 'Unknown error, response has no body');
         }
 
         // Check for ChAccountNotFoundException or similar
         if (isset($data['exception']) || (isset($data['error']) && str_contains(strtolower($data['error']), 'account not found'))) {
+            Log::error('Account not found in Parsian Bank', [
+                'organ_slug' => $this->organSlug,
+                'account_number' => $accountNumber,
+                'response_data' => $data,
+            ]);
+
             throw new \Exception('Account not found: ' . $accountNumber);
         }
 
         if (! isset($data['balance'])) {
+            Log::error('Invalid response format from Parsian Bank', [
+                'organ_slug' => $this->organSlug,
+                'account_number' => $accountNumber,
+                'response_data' => $data,
+            ]);
+
             throw new \Exception('Invalid response from Parsian Bank');
         }
 
-        return [
+        $balanceData = [
             'accountNumber' => $data['accountNumber'] ?? $accountNumber,
             'balance' => (int) $data['balance'],
             'todayDepositAmount' => (int) ($data['todayDepositAmount'] ?? 0),
             'todayWithdrawAmount' => (int) ($data['todayWithdrawAmount'] ?? 0),
             'currency' => $data['currency'] ?? 'IRR',
         ];
+
+        Log::info('Successfully retrieved balance from Parsian Bank', [
+            'organ_slug' => $this->organSlug,
+            'account_number' => $balanceData['accountNumber'],
+            'balance' => $balanceData['balance'],
+        ]);
+
+        return $balanceData;
     }
 }

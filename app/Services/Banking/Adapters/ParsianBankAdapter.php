@@ -61,6 +61,13 @@ class ParsianBankAdapter implements BankAdapterInterface
         }
 
         try {
+            Log::info('Getting token from Parsian Bank', [
+                'organ_slug' => $this->organSlug,
+                'deposit_number' => $this->credentials['number'],
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'url' => $this->getOAuthTokenUrl(),
+            ]);
             $response = Http::timeout(10)
                 ->withBasicAuth($clientId, $clientSecret)
                 ->asForm()

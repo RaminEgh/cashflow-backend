@@ -55,7 +55,6 @@ class ParsianBankAdapter implements BankAdapterInterface
             throw new \Exception('Parsian Bank client credentials not configured');
         }
 
-        // Try to get token from cache first
         $environment = $this->shouldUseSandbox() ? 'sandbox' : 'production';
 
         // Each organ must have its own token, so organSlug is required
@@ -66,6 +65,14 @@ class ParsianBankAdapter implements BankAdapterInterface
         // Build cache key based on organ slug - each organ has its own token
         $cacheKey = "parsian_bank_token_{$environment}_{$this->organSlug}";
 
+        Log::notice('Cache key', [
+            'cacheKey' => $cacheKey,
+            'environment' => $environment,
+            'organSlug' => $this->organSlug,
+            'client_id' => $clientId,
+            'client_secret' => $this->maskSecret($clientSecret),
+        ]);
+
         $cachedToken = Cache::get($cacheKey);
         if ($cachedToken) {
             Log::notice('Using cached Parsian Bank token', [
@@ -73,9 +80,9 @@ class ParsianBankAdapter implements BankAdapterInterface
                 'environment' => $environment,
                 'organSlug' => $this->organSlug,
                 'client_id' => $clientId,
-                'client_secret' => $this->maskSecret($clientSecret),
+                'client_secret' => $clientSecret,
                 'cache_key' => $cacheKey,
-                'token_preview' => substr($cachedToken, 0, 20) . '...',
+                'token_preview' => $cachedToken
             ]);
 
             return $cachedToken;
@@ -83,12 +90,22 @@ class ParsianBankAdapter implements BankAdapterInterface
 
         // Try sandbox first, then fallback to production
         $urls = [
-            'sandbox' => config('banks.parsian.oauth_sandbox_token_url'),
             'production' => config('banks.parsian.oauth_token_url'),
+            'sandbox' => config('banks.parsian.oauth_sandbox_token_url'),
         ];
+
+        
 
         $authUrl = $this->shouldUseSandbox() ? $urls['sandbox'] : $urls['production'];
         $lastException = null;
+
+        Log::notice('Auth URL', [
+            'authUrl' => $authUrl,
+            'environment' => $environment,
+            'organSlug' => $this->organSlug,
+            'client_id' => $clientId,
+            'client_secret' => $this->maskSecret($clientSecret),
+        ]);
 
         // Try primary URL first
         try {

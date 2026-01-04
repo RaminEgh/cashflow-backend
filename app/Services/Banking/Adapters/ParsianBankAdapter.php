@@ -96,7 +96,6 @@ class ParsianBankAdapter implements BankAdapterInterface
 
 
         $authUrl = $this->shouldUseSandbox() ? $urls['sandbox'] : $urls['production'];
-        $lastException = null;
 
         Log::notice('Auth URL', [
             'authUrl' => $authUrl,
@@ -106,10 +105,9 @@ class ParsianBankAdapter implements BankAdapterInterface
             'client_secret' => $clientSecret,
         ]);
 
-        // Try primary URL first
         try {
             $curlCommand = $this->generateCurlCommand($authUrl, $clientId, $clientSecret);
-            Log::info('Parsian Bank authentication curl command (primary URL)', [
+            Log::info('Parsian Bank authentication curl command', [
                 'url' => $authUrl,
                 'organSlug' => $this->organSlug,
                 'client_id' => $clientId,
@@ -153,7 +151,7 @@ class ParsianBankAdapter implements BankAdapterInterface
             $responseBody = $response->body();
             $responseData = $response->json();
 
-            Log::warning('Parsian Bank authentication failed with primary URL', [
+            Log::error('Parsian Bank authentication failed', [
                 'url' => $authUrl,
                 'organSlug' => $this->organSlug,
                 'client_id' => $clientId,
@@ -165,134 +163,36 @@ class ParsianBankAdapter implements BankAdapterInterface
 
             // If we got a response but no token, check for specific error messages
             if (isset($responseData['error'])) {
-                $lastException = new \Exception("Parsian Bank authentication failed (HTTP {$statusCode}): {$responseData['error']}");
-            } else {
-                $lastException = new \Exception("Parsian Bank authentication failed (HTTP {$statusCode}): Invalid response format");
+                throw new \Exception("Parsian Bank authentication failed (HTTP {$statusCode}): {$responseData['error']}");
             }
+
+            throw new \Exception("Parsian Bank authentication failed (HTTP {$statusCode}): Invalid response format");
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            $lastException = $e;
-            Log::warning('Parsian Bank primary URL connection failed', [
+            Log::error('Parsian Bank authentication connection failed', [
                 'url' => $authUrl,
                 'organSlug' => $this->organSlug,
                 'client_id' => $clientId,
                 'client_secret' => $clientSecret,
                 'error' => $e->getMessage(),
-            ]);
-        } catch (\Exception $e) {
-            $lastException = $e;
-            Log::warning('Parsian Bank primary URL failed', [
-                'url' => $authUrl,
-                'organSlug' => $this->organSlug,
-                'client_id' => $clientId,
-                'client_secret' => $clientSecret,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
-        // Try fallback URL if primary failed
-        $fallbackUrl = $this->shouldUseSandbox() ? $urls['production'] : $urls['sandbox'];
-
-        try {
-            $curlCommand = $this->generateCurlCommand($fallbackUrl, $clientId, $clientSecret);
-            Log::info('Parsian Bank authentication curl command (fallback URL)', [
-                'url' => $fallbackUrl,
-                'organSlug' => $this->organSlug,
-                'client_id' => $clientId,
-                'client_secret' => $clientSecret,
-                'curl_command' => $curlCommand,
-            ]);
-
-            $response = Http::timeout(10)
-                ->withBasicAuth($clientId, $clientSecret)
-                ->asForm()
-                ->post($fallbackUrl, [
-                    'grant_type' => 'client_credentials',
-                    'client_id' => $clientId,
-                    'client_secret' => $clientSecret,
-                ]);
-
-            if ($response->successful() && isset($response->json()['access_token'])) {
-                $tokenData = $response->json();
-                $token = $tokenData['access_token'];
-                $expiresIn = $tokenData['expires_in'] ?? 3600;
-
-                // Cache token for slightly less than its expiration time to be safe
-                $cacheDuration = max(1, $expiresIn - 60); // 60 seconds buffer
-
-                Cache::put($cacheKey, $token, $cacheDuration);
-
-                Log::info('Parsian Bank authentication succeeded with fallback URL and cached', [
-                    'fallback_url' => $fallbackUrl,
-                    'organSlug' => $this->organSlug,
-                    'client_id' => $clientId,
-                    'client_secret' => $clientSecret,
-                    'cache_key' => $cacheKey,
-                    'expires_in' => $expiresIn,
-                    'cache_duration' => $cacheDuration,
-                ]);
-
-                return $token;
-            }
-
-            $statusCode = $response->status();
-            $responseBody = $response->body();
-            $responseData = $response->json();
-
-            Log::error('Failed to authenticate with Parsian Bank (both URLs)', [
-                'primary_url' => $authUrl,
-                'fallback_url' => $fallbackUrl,
-                'organSlug' => $this->organSlug,
-                'client_id' => $clientId,
-                'client_secret' => $clientSecret,
-                'status' => $statusCode,
-                'response' => $responseBody,
-                'data' => $responseData,
-                'primary_error' => $lastException?->getMessage(),
-            ]);
-
-            // Include error message from response if available
-            $errorMessage = $responseData['error'] ?? $responseData['message'] ?? 'Unknown error';
-            throw new \Exception("Failed to authenticate with Parsian Bank (HTTP {$statusCode}): {$errorMessage}");
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            Log::error('Failed to authenticate with Parsian Bank - connection error', [
-                'primary_url' => $authUrl,
-                'fallback_url' => $fallbackUrl,
-                'organSlug' => $this->organSlug,
-                'client_id' => $clientId,
-                'client_secret' => $clientSecret,
-                'primary_error' => $lastException?->getMessage(),
-                'fallback_error' => $e->getMessage(),
             ]);
 
             throw new \Exception('Failed to authenticate with Parsian Bank - connection error: ' . $e->getMessage());
         } catch (\Exception $e) {
-            Log::error('Failed to authenticate with Parsian Bank', [
-                'primary_url' => $authUrl,
-                'fallback_url' => $fallbackUrl,
+            Log::error('Parsian Bank authentication failed', [
+                'url' => $authUrl,
                 'organSlug' => $this->organSlug,
                 'client_id' => $clientId,
                 'client_secret' => $clientSecret,
-                'primary_error' => $lastException?->getMessage(),
-                'fallback_error' => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
-            // If the exception already has a detailed message, use it; otherwise create a new one
-            if (str_contains($e->getMessage(), 'Failed to authenticate')) {
-                throw $e;
-            }
-
-            throw new \Exception('Failed to authenticate with Parsian Bank: ' . $e->getMessage());
+            throw $e;
         }
     }
 
     protected function shouldUseSandbox(): bool
     {
-        $explicit = config('banks.parsian.use_sandbox');
-        if ($explicit !== null) {
-            return (bool) $explicit;
-        }
-
-        return config('app.env') !== 'production';
+        return config('app.env') === 'local';
     }
 
     /**

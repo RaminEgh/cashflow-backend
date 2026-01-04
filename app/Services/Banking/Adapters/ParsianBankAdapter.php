@@ -66,8 +66,6 @@ class ParsianBankAdapter implements BankAdapterInterface
                 ->asForm()
                 ->post($this->getOAuthTokenUrl(), [
                     'grant_type' => 'client_credentials',
-                    'client_id' => $clientId,
-                    'client_secret' => $clientSecret,
                 ]);
 
             if ($response->successful()) {
@@ -82,22 +80,22 @@ class ParsianBankAdapter implements BankAdapterInterface
 
                 return $token;
             } else {
+                $statusCode = $response->status();
+                $responseBody = $response->body();
+                $responseData = $response->json();
+
                 Log::error('Failed to get token from Parsian Bank', [
-                    'response' => $response->body(),
+                    'status_code' => $statusCode,
+                    'response' => $responseBody,
                 ]);
-                throw new \Exception('Failed to get token from Parsian Bank');
+
+                // If we got a response but no token, check for specific error messages
+                if (isset($responseData['error'])) {
+                    throw new \Exception("Parsian Bank authentication failed (HTTP {$statusCode}): {$responseData['error']}");
+                }
+
+                throw new \Exception("Parsian Bank authentication failed (HTTP {$statusCode}): Invalid response format");
             }
-
-            $statusCode = $response->status();
-            $responseBody = $response->body();
-            $responseData = $response->json();
-
-            // If we got a response but no token, check for specific error messages
-            if (isset($responseData['error'])) {
-                throw new \Exception("Parsian Bank authentication failed (HTTP {$statusCode}): {$responseData['error']}");
-            }
-
-            throw new \Exception("Parsian Bank authentication failed (HTTP {$statusCode}): Invalid response format");
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             throw new \Exception('Failed to authenticate with Parsian Bank - connection error: ' . $e->getMessage());
         } catch (\Exception $e) {

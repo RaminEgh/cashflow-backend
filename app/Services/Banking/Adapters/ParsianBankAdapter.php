@@ -70,7 +70,7 @@ class ParsianBankAdapter implements BankAdapterInterface
                     'client_secret' => $clientSecret,
                 ]);
 
-            if ($response->successful() && isset($response->json()['access_token'])) {
+            if ($response->successful()) {
                 $tokenData = $response->json();
                 $token = $tokenData['access_token'];
                 $expiresIn = $tokenData['expires_in'] ?? 3600;
@@ -81,6 +81,11 @@ class ParsianBankAdapter implements BankAdapterInterface
                 Cache::put($cacheKey, $token, $cacheDuration);
 
                 return $token;
+            } else {
+                Log::error('Failed to get token from Parsian Bank', [
+                    'response' => $response->body(),
+                ]);
+                throw new \Exception('Failed to get token from Parsian Bank');
             }
 
             $statusCode = $response->status();

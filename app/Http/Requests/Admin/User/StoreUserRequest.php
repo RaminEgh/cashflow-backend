@@ -26,8 +26,10 @@ class StoreUserRequest extends FormRequest
             'first_name' => 'required|min:3|max:64',
             'last_name' => 'required|min:3|max:64',
             'email' => 'required|email|unique:users',
+            'phone' => 'nullable|string|min:11|max:11|unique:users,phone',
             'password' => 'nullable|min:8|max:64',
-            'type' => 'nullable|in:'.UserType::Organ->value.','.UserType::General->value,
+            'national_code' => 'nullable|string|min:10|max:10',
+            'type' => 'nullable|in:' . UserType::Organ->value . ',' . UserType::General->value,
         ];
     }
 }

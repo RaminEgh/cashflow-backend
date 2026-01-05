@@ -40,7 +40,7 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request)
     {
-        $user = User::create([...$request->validated(), 'password' => Hash::make($request->password)]);
+        $user = User::create([...$request->validated(), 'password' => Hash::make($request->password ?? $request->email)]);
 
         return Helper::successResponse('کاربر با موفقیت ایجاد شد', new UserResource($user));
     }

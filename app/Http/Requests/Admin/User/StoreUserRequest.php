@@ -26,7 +26,7 @@ class StoreUserRequest extends FormRequest
             'first_name' => 'required|min:3|max:64',
             'last_name' => 'required|min:3|max:64',
             'email' => 'required|email|unique:users',
-            'password' => 'required|min:8|max:64',
+            'password' => 'nullable|min:8|max:64',
             'type' => 'nullable|in:'.UserType::Organ->value.','.UserType::General->value,
         ];
     }

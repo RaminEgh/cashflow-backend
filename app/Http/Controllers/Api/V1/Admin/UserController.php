@@ -42,7 +42,7 @@ class UserController extends Controller
     {
         $user = User::create([...$request->validated(), 'password' => Hash::make($request->password ?? $request->email)]);
 
-        return Helper::successResponse('کاربر با موفقیت ایجاد شد', new UserResource($user));
+        return Helper::successResponse('(رمز عبور ایمیل کاربر است) کاربر با موفقیت ایجاد شد', new UserResource($user));
     }
 
     public function update(User $user, UpdateUserRequest $request)
